@@ -1,0 +1,3023 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>OfferPilot · Offer 透明化与决策助手</title>
+  <style>
+    :root {
+      --bg: #f5f8fe;
+      --bg-2: #eef4ff;
+      --surface: rgba(255,255,255,.82);
+      --surface-2: rgba(255,255,255,.94);
+      --surface-3: #f7f9fd;
+      --line: rgba(15,23,42,.08);
+      --line-strong: rgba(15,23,42,.12);
+      --text: #0f172a;
+      --text-soft: #475569;
+      --text-faint: #64748b;
+      --primary: #315efb;
+      --primary-2: #5b7dff;
+      --primary-soft: rgba(49,94,251,.10);
+      --green: #16a34a;
+      --green-soft: rgba(22,163,74,.12);
+      --amber: #d97706;
+      --amber-soft: rgba(217,119,6,.12);
+      --red: #dc2626;
+      --red-soft: rgba(220,38,38,.10);
+      --shadow-xl: 0 32px 80px rgba(15,23,42,.12);
+      --shadow-lg: 0 20px 44px rgba(15,23,42,.08);
+      --shadow-md: 0 12px 24px rgba(15,23,42,.06);
+      --radius-2xl: 34px;
+      --radius-xl: 26px;
+      --radius-lg: 20px;
+      --radius-md: 16px;
+      --radius-sm: 12px;
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      font-family: Inter, "SF Pro Display", "PingFang SC", "Microsoft YaHei", sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at 12% 0%, rgba(49,94,251,.14), transparent 24%),
+        radial-gradient(circle at 90% 10%, rgba(14,165,233,.10), transparent 20%),
+        linear-gradient(180deg, #f8fbff 0%, #f3f7fe 38%, #eef4ff 100%);
+      min-height: 100vh;
+    }
+
+    button, input, select, textarea { font: inherit; }
+    button { cursor: pointer; }
+    a { color: inherit; }
+
+    .app-shell {
+      max-width: 1500px;
+      width: calc(100vw - 24px);
+      width: -webkit-calc(100vw - 24px);
+      margin: 12px auto 22px;
+      border-radius: 38px;
+      background: rgba(255,255,255,.46);
+      border: 1px solid rgba(255,255,255,.72);
+      -webkit-backdrop-filter: blur(22px);
+      backdrop-filter: blur(22px);
+      box-shadow: var(--shadow-xl);
+      overflow: hidden;
+      position: relative;
+    }
+
+    .ambient, .ambient-2 {
+      position: absolute;
+      border-radius: 999px;
+      filter: blur(30px);
+      pointer-events: none;
+      opacity: .65;
+    }
+    .ambient { width: 220px; height: 220px; background: rgba(49,94,251,.16); top: -70px; right: -40px; }
+    .ambient-2 { width: 190px; height: 190px; background: rgba(22,163,74,.10); left: -60px; bottom: 20%; }
+
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 30;
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      align-items: center;
+      gap: 16px;
+      padding: 14px 18px;
+      background: rgba(255,255,255,.64);
+      border-bottom: 1px solid var(--line);
+      backdrop-filter: blur(16px);
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-width: 240px;
+    }
+    .brand-mark {
+      width: 44px;
+      height: 44px;
+      border-radius: 15px;
+      background: linear-gradient(145deg, var(--primary) 0%, var(--primary-2) 100%);
+      display: grid;
+      place-items: center;
+      color: white;
+      font-size: 18px;
+      font-weight: 900;
+      box-shadow: 0 12px 28px rgba(49,94,251,.28);
+    }
+    .brand .meta strong { display: block; font-size: 15px; letter-spacing: .01em; }
+    .brand .meta span { display: block; color: var(--text-faint); font-size: 12px; margin-top: 2px; }
+
+    .nav-pills {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 10px;
+    }
+    .nav-pill {
+      border: 1px solid transparent;
+      background: transparent;
+      color: var(--text-soft);
+      padding: 10px 14px;
+      border-radius: 999px;
+      font-size: 13px;
+      font-weight: 700;
+      transition: .2s ease;
+    }
+    .nav-pill:hover { background: rgba(255,255,255,.82); border-color: var(--line); color: var(--text); }
+    .nav-pill.active {
+      background: white;
+      border-color: rgba(49,94,251,.18);
+      color: var(--primary);
+      box-shadow: 0 10px 24px rgba(49,94,251,.10);
+    }
+
+    .top-actions {
+      display: flex;
+      gap: 10px;
+      justify-content: flex-end;
+      min-width: 320px;
+      flex-wrap: wrap;
+    }
+
+    .primary-btn, .ghost-btn, .soft-btn, .danger-btn {
+      border: none;
+      padding: 11px 16px;
+      border-radius: 999px;
+      font-size: 13px;
+      font-weight: 800;
+      transition: .18s ease;
+      white-space: nowrap;
+    }
+    .primary-btn {
+      background: linear-gradient(135deg, var(--primary) 0%, var(--primary-2) 100%);
+      color: white;
+      box-shadow: 0 14px 26px rgba(49,94,251,.24);
+    }
+    .ghost-btn {
+      background: rgba(255,255,255,.78);
+      color: var(--text);
+      border: 1px solid var(--line);
+    }
+    .soft-btn {
+      background: var(--primary-soft);
+      color: var(--primary);
+    }
+    .danger-btn {
+      background: var(--red-soft);
+      color: var(--red);
+    }
+    .primary-btn:hover, .ghost-btn:hover, .soft-btn:hover, .danger-btn:hover { transform: translateY(-1px); }
+
+    .workspace { padding: 16px; }
+    .screen { display: none; animation: fade .28s ease; }
+    .screen.active { display: block; }
+    @keyframes fade {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid rgba(255,255,255,.72);
+      border-radius: var(--radius-xl);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+      box-shadow: var(--shadow-md);
+      overflow: hidden;
+      position: relative;
+      display: -webkit-flex;
+      display: flex;
+      -webkit-flex-direction: column;
+      flex-direction: column;
+      min-height: 100%;
+    }
+    .card-strong { background: var(--surface-2); }
+    .card-inner { 
+      padding: 24px; 
+      display: -webkit-flex;
+      display: flex;
+      -webkit-flex-direction: column;
+      flex-direction: column;
+      -webkit-flex: 1;
+      flex: 1;
+    }
+    .mini-dashboard .card-inner, .cta-card .card-inner { padding: 28px; }
+    .subtle-grid {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      background-image: linear-gradient(rgba(15,23,42,.02) 1px, transparent 1px), linear-gradient(90deg, rgba(15,23,42,.02) 1px, transparent 1px);
+      background-size: 20px 20px;
+      mask-image: linear-gradient(180deg, rgba(0,0,0,.35), transparent 88%);
+    }
+
+    .section-head {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 18px;
+      margin-bottom: 22px;
+      flex-wrap: wrap;
+    }
+    .section-head > div:first-child { max-width: 640px; }
+    .section-head h2, .section-head h3, .section-head h4 {
+      margin: 0;
+      line-height: 1.12;
+      letter-spacing: -.02em;
+    }
+    .section-head p {
+      margin: 10px 0 0;
+      color: var(--text-soft);
+      line-height: 1.72;
+      font-size: 14px;
+      max-width: 560px;
+    }
+
+    .eyebrow, .badge, .status, .tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 800;
+    }
+    .eyebrow { background: rgba(255,255,255,.84); color: var(--primary); border: 1px solid var(--line); }
+    .badge { background: var(--primary-soft); color: var(--primary); }
+    .status.success, .tag.success { color: var(--green); background: var(--green-soft); }
+    .status.warn, .tag.warn { color: var(--amber); background: var(--amber-soft); }
+    .status.neutral, .tag.neutral { color: var(--text-soft); background: rgba(15,23,42,.06); }
+    .status.primary, .tag.primary { color: var(--primary); background: var(--primary-soft); }
+
+    .hero-grid {
+      display: -webkit-grid;
+      display: grid;
+      -webkit-grid-template-columns: 1fr minmax(380px, .75fr);
+      grid-template-columns: 1fr minmax(380px, .75fr);
+      gap: 24px;
+      margin-bottom: 24px;
+      -webkit-align-items: stretch;
+      align-items: stretch;
+    }
+    .hero-card {
+      display: -webkit-flex;
+      display: flex;
+      -webkit-flex-direction: column;
+      flex-direction: column;
+      min-height: 100%;
+      background:
+        radial-gradient(circle at top left, rgba(49,94,251,.15), transparent 35%),
+        radial-gradient(circle at 75% 20%, rgba(14,165,233,.10), transparent 20%),
+        linear-gradient(180deg, rgba(255,255,255,.97) 0%, rgba(248,250,255,.92) 100%);
+    }
+    .hero-card .card-inner { 
+      padding: 32px 34px 28px; 
+      display: -webkit-flex;
+      display: flex;
+      -webkit-flex-direction: column;
+      flex-direction: column;
+      -webkit-flex: 1;
+      flex: 1;
+    }
+    .hero-copy {
+      width: 100%;
+      display: -webkit-flex;
+      display: flex;
+      -webkit-flex-direction: column;
+      flex-direction: column;
+    }
+    .hero-card h1 {
+      margin: 20px 0 16px;
+      font-size: clamp(38px, 4.5vw, 72px);
+      line-height: .94;
+      letter-spacing: -.05em;
+      display: grid;
+      gap: 6px;
+      background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 50%, #60a5fa 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      font-weight: 900;
+    }
+    .hero-card h1 span { display: block; }
+    .hero-card p {
+      margin: 0;
+      color: var(--text-soft);
+      font-size: 16px;
+      line-height: 1.78;
+    }
+    .hero-points {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 20px;
+    }
+    .hero-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin: 26px 0 20px;
+    }
+    .hero-stats {
+      display: -webkit-flex;
+      display: flex;
+      -webkit-flex-direction: column;
+      flex-direction: column;
+      gap: 16px;
+      margin-top: 24px;
+      padding-top: 24px;
+      border-top: 1px solid rgba(15,23,42,.08);
+    }
+    .stat {
+      padding: 22px 24px;
+      border-radius: 20px;
+      background: -webkit-linear-gradient(135deg, rgba(255,255,255,.96) 0%, rgba(248,250,255,.92) 100%);
+      background: linear-gradient(135deg, rgba(255,255,255,.96) 0%, rgba(248,250,255,.92) 100%);
+      border: 1px solid rgba(15,23,42,.08);
+      display: -webkit-flex;
+      display: flex;
+      -webkit-align-items: center;
+      align-items: center;
+      gap: 22px;
+      box-shadow: 0 8px 24px rgba(15,23,42,.06);
+      -webkit-transition: .2s ease;
+      transition: .2s ease;
+      position: relative;
+      overflow: hidden;
+      min-height: 88px;
+    }
+    .stat::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      width: 5px;
+      background: -webkit-linear-gradient(180deg, var(--primary) 0%, var(--primary-2) 100%);
+      background: linear-gradient(180deg, var(--primary) 0%, var(--primary-2) 100%);
+      border-radius: 0 3px 3px 0;
+    }
+    .stat:hover {
+      -webkit-transform: translateY(-3px);
+      transform: translateY(-3px);
+      border-color: rgba(49,94,251,.18);
+      box-shadow: 0 14px 32px rgba(49,94,251,.10);
+    }
+    .stat .k { font-size: 12px; color: var(--text-faint); white-space: nowrap; padding-left: 6px; font-weight: 700; }
+    .stat .v { font-size: 26px; font-weight: 900; letter-spacing: -.04em; color: var(--text); flex-shrink: 0; }
+    .stat .d { margin-top: 0; color: var(--text-soft); font-size: 14px; line-height: 1.65; flex: 1; }
+
+    .hero-side {
+      display: grid;
+      gap: 18px;
+    }
+    .mini-dashboard {
+      display: grid;
+      gap: 14px;
+      background: linear-gradient(180deg, rgba(255,255,255,.96), rgba(246,249,255,.84));
+    }
+    .dashboard-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 14px;
+      margin-bottom: 6px;
+    }
+    .city-row, .chip-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: rgba(255,255,255,.9);
+      border: 1px solid var(--line);
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--text-soft);
+    }
+    .offer-summary {
+      padding: 18px;
+      border-radius: 22px;
+      background: linear-gradient(155deg, #2d58fb 0%, #6f8dff 100%);
+      color: white;
+      box-shadow: 0 24px 48px rgba(49,94,251,.20);
+    }
+    .offer-summary .label { font-size: 12px; opacity: .88; }
+    .offer-summary .big { font-size: 38px; font-weight: 900; margin: 10px 0 8px; letter-spacing: -.04em; }
+    .offer-summary .small-row {
+      display: flex; justify-content: space-between; gap: 8px; font-size: 12px; opacity: .92;
+    }
+    .micro-list { display: grid; gap: 10px; }
+    .micro-item {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 12px 14px;
+      border-radius: 16px;
+      background: rgba(255,255,255,.9);
+      border: 1px solid var(--line);
+      font-size: 13px;
+    }
+
+    .hero-kicker {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: rgba(255,255,255,.88);
+      border: 1px solid rgba(49,94,251,.12);
+      color: var(--primary);
+      font-size: 12px;
+      font-weight: 800;
+    }
+    .hero-bullet {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 14px;
+      border-radius: 999px;
+      background: rgba(255,255,255,.9);
+      border: 1px solid var(--line);
+      color: var(--text-soft);
+      font-size: 13px;
+      font-weight: 700;
+    }
+    .hero-bullet strong {
+      color: var(--text);
+      font-weight: 800;
+    }
+    .cta-card {
+      background: linear-gradient(180deg, rgba(255,255,255,.96), rgba(245,248,255,.88));
+    }
+    .quick-action-stack {
+      display: grid;
+      gap: 10px;
+      margin-top: 12px;
+    }
+    .quick-link {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      width: 100%;
+      padding: 18px 18px;
+      border-radius: 20px;
+      border: 1px solid rgba(15,23,42,.08);
+      background: linear-gradient(180deg, rgba(255,255,255,.92), rgba(248,250,255,.88));
+      color: var(--text);
+      font-size: 14px;
+      font-weight: 700;
+      text-align: left;
+      transition: .18s ease;
+    }
+    .quick-link:hover {
+      transform: translateY(-1px);
+      border-color: rgba(49,94,251,.16);
+      box-shadow: 0 14px 28px rgba(15,23,42,.06);
+    }
+    .quick-link small {
+      display: block;
+      margin-top: 4px;
+      color: var(--text-faint);
+      font-size: 12px;
+      font-weight: 600;
+    }
+    .summary-grid {
+      display: grid;
+      gap: 12px;
+      margin-top: 16px;
+    }
+
+    .scenario-grid, .two-col, .three-col, .report-grid, .history-grid {
+      display: -webkit-grid;
+      display: grid;
+      gap: 18px;
+    }
+    .scenario-grid { -webkit-grid-template-columns: repeat(3, 1fr); grid-template-columns: repeat(3, 1fr); margin-bottom: 16px; }
+    .two-col { 
+      -webkit-grid-template-columns: 1.15fr .85fr; 
+      grid-template-columns: 1.15fr .85fr; 
+      margin-bottom: 16px; 
+      -webkit-align-items: stretch;
+      align-items: stretch;
+      min-height: 420px;
+    }
+    .three-col { 
+      -webkit-grid-template-columns: repeat(3, 1fr); 
+      grid-template-columns: repeat(3, 1fr); 
+      -webkit-align-items: stretch;
+      align-items: stretch;
+    }
+    .report-grid { -webkit-grid-template-columns: repeat(3, 1fr); grid-template-columns: repeat(3, 1fr); }
+    .history-grid { -webkit-grid-template-columns: repeat(3, 1fr); grid-template-columns: repeat(3, 1fr); }
+
+    .scenario-card, .info-card, .history-card, .offer-card, .report-card {
+      padding: 18px;
+      border-radius: 22px;
+      background: rgba(255,255,255,.88);
+      border: 1px solid var(--line);
+      box-shadow: var(--shadow-md);
+      position: relative;
+      overflow: hidden;
+    }
+    .scenario-card h3, .history-card h3, .offer-card h3, .report-card h4 { margin: 0 0 8px; }
+    .scenario-card p, .history-card p, .offer-card p, .report-card p { margin: 0; color: var(--text-soft); font-size: 13px; line-height: 1.7; }
+    .scenario-card .icon {
+      width: 42px; height: 42px; border-radius: 14px; display: -webkit-grid; display: grid; -webkit-place-items: center; place-items: center; background: var(--primary-soft); color: var(--primary); font-size: 20px; margin-bottom: 14px;
+    }
+    .info-list {
+      display: -webkit-flex;
+      display: flex;
+      -webkit-flex-direction: column;
+      flex-direction: column;
+      gap: 18px;
+      margin-top: 20px;
+      padding-top: 20px;
+      border-top: 1px solid rgba(15,23,42,.06);
+      -webkit-flex: 1;
+      flex: 1;
+    }
+    .info-card {
+      display: -webkit-flex;
+      display: flex;
+      -webkit-align-items: center;
+      align-items: center;
+      -webkit-flex: 1;
+      flex: 1;
+      gap: 18px;
+      padding: 22px 24px;
+      border-radius: 20px;
+      background: rgba(255,255,255,.92);
+      border: 1px solid rgba(15,23,42,.06);
+      box-shadow: 0 8px 20px rgba(15,23,42,.04);
+      position: relative;
+      overflow: hidden;
+      -webkit-transition: .18s ease;
+      transition: .18s ease;
+      min-height: 80px;
+    }
+    .info-card:hover {
+      -webkit-transform: translateX(4px);
+      transform: translateX(4px);
+      border-color: rgba(49,94,251,.14);
+      box-shadow: 0 12px 28px rgba(49,94,251,.08);
+    }
+    .info-card .icon-bg {
+      position: absolute;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      width: 5px;
+      background: -webkit-linear-gradient(180deg, var(--primary) 0%, var(--primary-2) 100%);
+      background: linear-gradient(180deg, var(--primary) 0%, var(--primary-2) 100%);
+      border-radius: 0 3px 3px 0;
+    }
+    .info-card .icon {
+      width: 44px; 
+      height: 44px; 
+      border-radius: 14px; 
+      display: -webkit-grid; 
+      display: grid; 
+      -webkit-place-items: center; 
+      place-items: center; 
+      background: var(--primary-soft); 
+      color: var(--primary); 
+      font-size: 22px; 
+      flex-shrink: 0;
+      z-index: 1;
+    }
+    .info-card h3 { 
+      margin: 0 0 6px; 
+      font-size: 18px; 
+      font-weight: 800;
+      color: var(--text);
+      z-index: 1;
+    }
+    .info-card p { 
+      margin: 0; 
+      color: var(--text-soft); 
+      font-size: 15px; 
+      line-height: 1.7; 
+      flex: 1;
+      z-index: 1;
+    }
+    .scenario-card .action-row, .history-actions, .offer-actions, .modal-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+    .step-list { display: grid; gap: 12px; }
+    .step-item {
+      display: grid; grid-template-columns: 34px 1fr; gap: 12px; align-items: flex-start;
+      padding: 14px; border-radius: 18px; background: rgba(255,255,255,.84); border: 1px solid var(--line);
+    }
+    .step-no {
+      width: 34px; height: 34px; border-radius: 12px; background: var(--primary-soft); color: var(--primary); font-weight: 900; display: grid; place-items: center;
+    }
+
+    .toolbar {
+      display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 16px;
+    }
+
+    .segment {
+      display: inline-flex; gap: 4px; padding: 4px; border-radius: 999px; background: rgba(255,255,255,.88); border: 1px solid var(--line);
+    }
+    .segment button {
+      border: none; background: transparent; color: var(--text-soft); padding: 10px 14px; border-radius: 999px; font-size: 12px; font-weight: 800;
+    }
+    .segment button.active { background: var(--primary); color: white; box-shadow: 0 10px 20px rgba(49,94,251,.22); }
+
+    .input-layout { display: grid; grid-template-columns: 1.08fr .92fr; gap: 18px; }
+    .form-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+    .field { display: grid; gap: 10px; }
+    .field label {
+      font-size: 13px;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: #24314b;
+      letter-spacing: -.01em;
+    }
+    .field input,
+    .field select,
+    .field textarea,
+    .history-toolbar input,
+    .history-toolbar select {
+      width: 100%;
+      border: 1px solid rgba(148,163,184,.24);
+      background: linear-gradient(180deg, rgba(255,255,255,.96), rgba(247,250,255,.92));
+      color: var(--text);
+      box-shadow:
+        inset 0 1px 0 rgba(255,255,255,.78),
+        0 10px 26px rgba(15,23,42,.04);
+      transition: border-color .18s ease, box-shadow .18s ease, transform .18s ease;
+    }
+    .field input,
+    .field select,
+    .history-toolbar input,
+    .history-toolbar select {
+      min-height: 56px;
+      padding: 0 18px;
+      border-radius: 18px;
+    }
+    .field textarea {
+      min-height: 128px;
+      padding: 16px 18px;
+      border-radius: 20px;
+      resize: vertical;
+      line-height: 1.72;
+    }
+    .field input::placeholder,
+    .field textarea::placeholder,
+    .history-toolbar input::placeholder {
+      color: #94a3b8;
+    }
+    .field input:hover,
+    .field select:hover,
+    .field textarea:hover,
+    .history-toolbar input:hover,
+    .history-toolbar select:hover {
+      border-color: rgba(100,116,139,.28);
+    }
+    .field input:focus,
+    .field select:focus,
+    .field textarea:focus,
+    .history-toolbar input:focus,
+    .history-toolbar select:focus {
+      outline: none;
+      border-color: rgba(49,94,251,.26);
+      box-shadow:
+        0 0 0 4px rgba(49,94,251,.10),
+        0 16px 34px rgba(49,94,251,.10),
+        inset 0 1px 0 rgba(255,255,255,.82);
+      transform: translateY(-1px);
+    }
+    .field select,
+    .history-toolbar select {
+      appearance: none;
+      -webkit-appearance: none;
+      -moz-appearance: none;
+      padding-right: 50px;
+      background-image:
+        linear-gradient(180deg, rgba(255,255,255,.96), rgba(247,250,255,.92)),
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18' height='18' viewBox='0 0 18 18' fill='none'%3E%3Cpath d='M4.5 7.25L9 11.75L13.5 7.25' stroke='%2364748B' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+      background-repeat: no-repeat, no-repeat;
+      background-position: center, right 16px center;
+      background-size: auto, 18px;
+      cursor: pointer;
+    }
+    .field input[type="number"] { font-variant-numeric: tabular-nums; }
+    .pill-row { display: flex; gap: 8px; flex-wrap: wrap; }
+    .mini-pill {
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,.9);
+      color: var(--text-soft);
+      padding: 8px 12px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 700;
+    }
+    .mini-pill.active { background: var(--primary-soft); color: var(--primary); border-color: rgba(49,94,251,.18); }
+
+    .assist-box {
+      padding: 18px;
+      border-radius: 22px;
+      background: linear-gradient(180deg, rgba(49,94,251,.08), rgba(255,255,255,.92));
+      border: 1px solid rgba(49,94,251,.14);
+    }
+    .assist-list { display: grid; gap: 12px; }
+    .assist-item {
+      padding: 14px;
+      border-radius: 16px;
+      background: rgba(255,255,255,.86);
+      border: 1px solid rgba(15,23,42,.08);
+    }
+    .assist-item .row { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 8px; }
+    .assist-item strong { font-size: 14px; }
+    .assist-item p { margin: 0; color: var(--text-soft); font-size: 13px; line-height: 1.6; }
+
+    .metric-hero { display: grid; grid-template-columns: 1.08fr .92fr; gap: 16px; margin-bottom: 16px; }
+    .main-number { font-size: clamp(36px, 5vw, 62px); font-weight: 900; line-height: 1; letter-spacing: -.05em; margin: 12px 0 10px; }
+    .metric-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 16px; }
+    .metric-card {
+      padding: 16px;
+      border-radius: 18px;
+      background: rgba(255,255,255,.88);
+      border: 1px solid var(--line);
+    }
+    .metric-card .k { font-size: 12px; color: var(--text-faint); margin-bottom: 8px; }
+    .metric-card .v { font-size: 24px; font-weight: 900; letter-spacing: -.03em; margin-bottom: 6px; }
+    .metric-card .d { font-size: 12px; color: var(--text-soft); line-height: 1.55; }
+    .insight-box {
+      padding: 16px;
+      border-radius: 18px;
+      background: linear-gradient(180deg, rgba(49,94,251,.08), rgba(255,255,255,.90));
+      border: 1px solid rgba(49,94,251,.14);
+      margin-top: 16px;
+    }
+    .insight-box h4 { margin: 0 0 8px; }
+    .insight-box p { margin: 0; color: var(--text-soft); font-size: 14px; line-height: 1.7; }
+
+    .bars { display: grid; gap: 14px; margin-top: 16px; }
+    .bar-row { display: grid; grid-template-columns: 120px 1fr 70px; gap: 12px; align-items: center; }
+    .bar-track { height: 16px; border-radius: 999px; overflow: hidden; background: rgba(15,23,42,.06); position: relative; }
+    .bar-fill { position: absolute; inset: 0 auto 0 0; height: 100%; border-radius: inherit; }
+    .legend-row { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 16px; }
+    .legend { display: inline-flex; align-items: center; gap: 8px; padding: 8px 12px; border-radius: 999px; background: rgba(255,255,255,.88); border: 1px solid var(--line); font-size: 12px; color: var(--text-soft); font-weight: 700; }
+    .legend i { width: 10px; height: 10px; border-radius: 999px; display: inline-block; }
+
+    .compare-layout { display: grid; gap: 16px; }
+    .offer-tabs { display: flex; flex-wrap: wrap; gap: 10px; }
+    .offer-chip {
+      min-width: 180px;
+      padding: 12px 14px;
+      border-radius: 18px;
+      background: rgba(255,255,255,.90);
+      border: 1px solid var(--line);
+      transition: .18s ease;
+    }
+    .offer-chip.active { border-color: rgba(49,94,251,.18); background: linear-gradient(180deg, rgba(49,94,251,.08), rgba(255,255,255,.95)); box-shadow: 0 14px 28px rgba(49,94,251,.08); }
+    .offer-chip .top { display: flex; justify-content: space-between; gap: 8px; margin-bottom: 8px; font-size: 13px; font-weight: 800; }
+    .offer-chip .meta { color: var(--text-faint); font-size: 12px; }
+
+    .recommend-card {
+      display: grid;
+      grid-template-columns: 1.1fr .9fr;
+      gap: 18px;
+      padding: 22px;
+      border-radius: 26px;
+      background: linear-gradient(135deg, rgba(49,94,251,.10), rgba(17,24,39,.03));
+      border: 1px solid rgba(49,94,251,.14);
+    }
+    .recommend-card > div:first-child { padding: 8px 4px 4px; }
+    .recommend-card h3 {
+      margin: 0;
+      font-size: 30px;
+      line-height: 1.08;
+      letter-spacing: -.03em;
+    }
+    .recommend-card p {
+      margin: 14px 0 0;
+      max-width: 620px;
+      color: var(--text-soft);
+      line-height: 1.82;
+      font-size: 15px;
+    }
+    .reason-list { display: grid; gap: 10px; margin-top: 16px; }
+    .reason-item {
+      display: flex; gap: 10px; align-items: flex-start; padding: 12px 14px; border-radius: 16px; background: rgba(255,255,255,.86); border: 1px solid rgba(255,255,255,.72);
+    }
+    .reason-item .dot { width: 10px; height: 10px; margin-top: 6px; border-radius: 999px; background: var(--primary); flex: 0 0 auto; }
+
+    .table-wrap { overflow: auto; border-radius: 22px; border: 1px solid var(--line); background: rgba(255,255,255,.88); }
+    table { width: 100%; border-collapse: collapse; min-width: 980px; }
+    th, td { padding: 15px 16px; text-align: left; border-bottom: 1px solid rgba(15,23,42,.06); font-size: 14px; }
+    th { font-size: 12px; color: var(--text-faint); letter-spacing: .06em; text-transform: uppercase; background: rgba(255,255,255,.92); position: sticky; top: 0; }
+    td strong { font-size: 15px; }
+    .value-up { color: var(--green); font-weight: 900; }
+    .value-mid { color: var(--amber); font-weight: 900; }
+    .value-low { color: var(--red); font-weight: 900; }
+
+    .history-toolbar {
+      display: grid;
+      grid-template-columns: minmax(0, 1.25fr) 240px 170px;
+      gap: 14px;
+      margin-bottom: 18px;
+      padding: 14px;
+      border-radius: 24px;
+      background: rgba(255,255,255,.54);
+      border: 1px solid rgba(255,255,255,.72);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.72);
+      backdrop-filter: blur(12px);
+    }
+
+    .history-card .meta-row, .offer-card .meta-row {
+      display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0 14px;
+    }
+    .kv-row { display: grid; gap: 10px; margin-top: 14px; }
+    .kv-item { display: flex; align-items: center; justify-content: space-between; gap: 10px; font-size: 13px; }
+    .kv-item span { color: var(--text-soft); }
+    .muted { color: var(--text-faint); font-size: 12px; }
+
+    .empty-state {
+      padding: 26px;
+      text-align: center;
+      color: var(--text-soft);
+      border-radius: 24px;
+      background: rgba(255,255,255,.84);
+      border: 1px dashed rgba(15,23,42,.16);
+    }
+
+    .report-footer {
+      margin-top: 16px;
+      padding: 16px 18px;
+      border-radius: 18px;
+      background: rgba(255,255,255,.84);
+      border: 1px dashed rgba(15,23,42,.14);
+      display: flex; justify-content: space-between; gap: 14px; flex-wrap: wrap;
+    }
+
+    body.report-capture-mode .topbar { display: none; }
+    body.report-capture-mode .app-shell { width: min(1120px, calc(100vw - 24px)); margin-top: 20px; }
+
+    @media (max-width: 1220px) {
+      .hero-grid, .input-layout, .metric-hero, .two-col, .recommend-card { grid-template-columns: 1fr; }
+      .scenario-grid, .three-col, .report-grid, .history-grid, .metric-grid, .hero-stats { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 920px) {
+      .topbar { grid-template-columns: 1fr; }
+      .top-actions, .brand { min-width: 0; }
+      .top-actions { justify-content: flex-start; }
+      .history-toolbar, .form-grid { grid-template-columns: 1fr; }
+      .workspace { padding: 12px; }
+      .card-inner { padding: 18px; }
+      .bar-row { grid-template-columns: 1fr; gap: 8px; }
+      .app-shell { width: calc(100vw - 12px); margin: 6px auto 14px; border-radius: 24px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app-shell">
+    <div class="ambient"></div>
+    <div class="ambient-2"></div>
+
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand-mark">O</div>
+        <div class="meta">
+          <strong>OfferPilot · Offer 透明化与决策助手</strong>
+          <span>看懂 Offer，算清到手，做出更安心的选择</span>
+        </div>
+      </div>
+
+      <nav class="nav-pills" id="navPills">
+        <button class="nav-pill active" data-screen="home">首页</button>
+        <button class="nav-pill" data-screen="input">录入 Offer</button>
+        <button class="nav-pill" data-screen="result">到手结果</button>
+        <button class="nav-pill" data-screen="compare">多 Offer 对比</button>
+        <button class="nav-pill" data-screen="history">历史记录</button>
+        <button class="nav-pill" data-screen="report">报告导出</button>
+      </nav>
+
+      <div class="top-actions">
+        <button class="ghost-btn" id="ruleStatusBtn">历史记录</button>
+        <button class="soft-btn" id="seedDemoBtn">新建测算</button>
+        <button class="primary-btn" id="exportTopBtn">导出报告</button>
+      </div>
+    </header>
+
+    <main class="workspace">
+      <section class="screen active" id="screen-home">
+        <div class="hero-grid">
+          <div class="card card-strong hero-card">
+            <div class="subtle-grid"></div>
+            <div class="card-inner hero-copy">
+              <span class="hero-kicker">OfferPilot · 校招 Offer 决策助手</span>
+              <h1><span>看懂薪资结构</span><span>算清真实到手</span><span>再决定怎么选</span></h1>
+              <p>
+                把税前月薪、发薪月数、年终奖、五险一金、补贴和长期权益，统一整理成
+                <strong>每月预计到手、年度税后现金和多 Offer 对比结论</strong>，帮助你更快做出判断。
+              </p>
+
+              <div class="hero-points">
+                <span class="hero-bullet"><strong>按城市估算</strong>自动匹配口径</span>
+                <span class="hero-bullet"><strong>多 Offer 对比</strong>统一标准查看</span>
+                <span class="hero-bullet"><strong>历史记录</strong>随时回看继续编辑</span>
+              </div>
+
+              <div class="hero-actions">
+                <button class="primary-btn" data-jump="input">开始测算</button>
+                <button class="ghost-btn" data-jump="compare">查看对比</button>
+                <button class="soft-btn" id="heroParseBtn">粘贴文本识别</button>
+              </div>
+
+              <div class="hero-stats">
+                <div class="stat">
+                  <div class="k">最先回答的问题</div>
+                  <div class="v">每月到手</div>
+                  <div class="d">先把银行卡里能收到多少算清楚。</div>
+                </div>
+                <div class="stat">
+                  <div class="k">统一比较方式</div>
+                  <div class="v">现金 / 浮动 / 权益</div>
+                  <div class="d">把不同公司写法拆成同一口径再看。</div>
+                </div>
+                <div class="stat">
+                  <div class="k">更适合校招决策</div>
+                  <div class="v">一步出结论</div>
+                  <div class="d">不只给数字，也给判断方向。</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="hero-side">
+            <div class="card mini-dashboard">
+              <div class="card-inner">
+                <div class="dashboard-top">
+                  <div>
+                    <h3 style="margin:0 0 6px;">最近一次测算</h3>
+                    <div class="muted">回到上一次的结果，继续比较或重新编辑。</div>
+                  </div>
+                  <span class="badge">自动保存</span>
+                </div>
+                <div class="city-row" id="cityRow"></div>
+                <div class="offer-summary" id="homeSummaryCard">
+                  <div class="label">预计每月到手</div>
+                  <div class="big" id="homeSummaryValue">¥18,742</div>
+                  <div class="small-row">
+                    <span id="homeSummaryMetaA">上海 · 月薪 25k</span>
+                    <span id="homeSummaryMetaB">15 薪 · 年税后</span>
+                  </div>
+                </div>
+                <div class="summary-grid" id="homeMicroList"></div>
+              </div>
+            </div>
+
+            <div class="card cta-card">
+              <div class="card-inner">
+                <div class="section-head">
+                  <div>
+                    <h3>开始使用</h3>
+                    <p>从录入到导出报告，整个流程都可以直接操作。</p>
+                  </div>
+                </div>
+                <div class="quick-action-stack">
+                  <button class="quick-link" data-jump="input">
+                    <span>录入一个 Offer<small>手动填写，或直接粘贴文本</small></span>
+                    <span>→</span>
+                  </button>
+                  <button class="quick-link" data-jump="history">
+                    <span>打开历史记录<small>继续编辑、复制或加入对比</small></span>
+                    <span>→</span>
+                  </button>
+                  <button class="quick-link" data-jump="report">
+                    <span>查看当前报告<small>统一汇总到手、结构和推荐结论</small></span>
+                    <span>→</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="scenario-grid">
+          <div class="scenario-card">
+            <div class="icon">🧮</div>
+            <h3>算清单个 Offer</h3>
+            <p>输入城市、月薪、发薪月数、年终、公积金比例，就能快速得到每月到手和年度税后现金。</p>
+            <div class="action-row">
+              <button class="primary-btn" data-jump="input">去录入</button>
+            </div>
+          </div>
+          <div class="scenario-card">
+            <div class="icon">⚖️</div>
+            <h3>对比多个 Offer</h3>
+            <p>把 2-4 个 Offer 放在同一口径下比较，避免因为不同公司表达方式不一样而判断失真。</p>
+            <div class="action-row">
+              <button class="primary-btn" data-jump="compare">去对比</button>
+            </div>
+          </div>
+          <div class="scenario-card">
+            <div class="icon">🕘</div>
+            <h3>回看历史输入</h3>
+            <p>你保存过的 Offer 都会留在历史记录里，可以继续编辑、复制、加入对比或删除。</p>
+            <div class="action-row">
+              <button class="primary-btn" data-jump="history">看历史</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="two-col">
+          <div class="card">
+            <div class="card-inner">
+              <div class="section-head">
+                <div>
+                  <h2>你会看到哪些结果</h2>
+                  <p>先把最关键的数字和判断放在前面，再逐层展开明细。</p>
+                </div>
+              </div>
+              <div class="info-list">
+                <div class="info-card">
+                  <div class="icon">💵</div>
+                  <div class="icon-bg"></div>
+                  <h3>每月预计到手</h3>
+                  <p>先看真正落到手里的现金，避免只盯着名义总包做判断。</p>
+                </div>
+                <div class="info-card">
+                  <div class="icon">📊</div>
+                  <div class="icon-bg"></div>
+                  <h3>收入结构拆解</h3>
+                  <p>把固定收入、浮动收入和长期权益拆开后，更容易看清哪部分更稳。</p>
+                </div>
+                <div class="info-card">
+                  <div class="icon">🧭</div>
+                  <div class="icon-bg"></div>
+                  <h3>决策建议</h3>
+                  <p>对比多个 Offer 时，会结合偏好给出更适合当前阶段的选择方向。</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-inner">
+              <div class="section-head">
+                <div>
+                  <h2>最近保存的 Offer</h2>
+                  <p>最近保存的内容会出现在这里，方便继续比较或修改。</p>
+                </div>
+                <button class="ghost-btn" data-jump="history">查看全部</button>
+              </div>
+              <div id="recentHistoryList"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="screen" id="screen-input">
+        <div class="input-layout">
+          <div class="card">
+            <div class="card-inner">
+              <div class="section-head">
+                <div>
+                  <h2>录入 Offer</h2>
+                  <p>填写关键信息后，就可以测算到手、保存记录并加入对比。</p>
+                </div>
+                <span class="badge">录入信息</span>
+              </div>
+
+              <div class="toolbar">
+                <div class="segment" id="inputModeSegment">
+                  <button class="active" data-input-mode="manual">手动填写</button>
+                  <button data-input-mode="text">粘贴 Offer 文本</button>
+                  <button data-input-mode="template">智能模板</button>
+                </div>
+                <div class="pill-row" id="templatePills">
+                  <button class="mini-pill active" data-template="internet">互联网大厂</button>
+                  <button class="mini-pill" data-template="foreign">外企</button>
+                  <button class="mini-pill" data-template="manufacture">制造业研发</button>
+                  <button class="mini-pill" data-template="state">国企</button>
+                </div>
+              </div>
+
+              <form id="offerForm">
+                <div class="form-grid">
+                  <div class="field">
+                    <label>公司名称</label>
+                    <input id="company" placeholder="例如：字节 / 某外企 / 某制造业龙头" />
+                  </div>
+                  <div class="field">
+                    <label>岗位名称</label>
+                    <input id="position" placeholder="例如：算法工程师 / 产品经理" />
+                  </div>
+
+                  <div class="field">
+                    <label>工作城市</label>
+                    <select id="city">
+                      <option>上海</option>
+                      <option>北京</option>
+                      <option>深圳</option>
+                      <option>杭州</option>
+                      <option>成都</option>
+                    </select>
+                  </div>
+                  <div class="field">
+                    <label>税前月薪</label>
+                    <input id="monthlySalary" type="number" min="0" placeholder="例如 25000" value="25000" />
+                    <div class="pill-row">
+                      <button type="button" class="mini-pill active" data-salary-mode="monthly">按月薪输入</button>
+                      <button type="button" class="mini-pill" data-salary-mode="package">按总包反推</button>
+                      <button type="button" class="mini-pill" data-fill="guess">我不确定</button>
+                    </div>
+                  </div>
+
+                  <div class="field">
+                    <label>发薪月数</label>
+                    <select id="salaryMonths">
+                      <option value="15">15 薪</option>
+                      <option value="14">14 薪</option>
+                      <option value="13">13 薪</option>
+                      <option value="12">12 薪</option>
+                      <option value="16">16 薪</option>
+                    </select>
+                  </div>
+                  <div class="field">
+                    <label>年终奖（月）</label>
+                    <input id="bonusMonths" type="number" min="0" step="0.5" value="3" />
+                  </div>
+
+                  <div class="field">
+                    <label>公积金比例</label>
+                    <select id="housingRate">
+                      <option value="default">按当地默认</option>
+                      <option value="0.05">5%</option>
+                      <option value="0.07">7%</option>
+                      <option value="0.12">12%</option>
+                    </select>
+                  </div>
+                  <div class="field">
+                    <label>年度补贴 / 签字费</label>
+                    <input id="subsidyAnnual" type="number" min="0" step="1000" placeholder="例如 10000" value="0" />
+                  </div>
+
+                  <div class="field">
+                    <label>股票 / 期权名义价值</label>
+                    <input id="equityValue" type="number" min="0" step="1000" placeholder="例如 80000" value="80000" />
+                  </div>
+                  <div class="field">
+                    <label>风险偏好标签</label>
+                    <select id="riskPreference">
+                      <option value="balanced">默认平衡</option>
+                      <option value="cash">现金流优先</option>
+                      <option value="stable">求稳优先</option>
+                      <option value="growth">长期成长</option>
+                    </select>
+                  </div>
+
+                  <div class="field" style="grid-column: 1 / -1;" id="textInputField">
+                    <label>Offer 文本 / HR 消息 / 邮件内容</label>
+                    <textarea id="offerText">你好，Base 在上海，算法工程师，月薪 25k，15 薪，年终目标 3 个月，公积金按默认比例，另有 8w RSU，4 年归属。</textarea>
+                  </div>
+
+                  <div class="field" style="grid-column: 1 / -1;" id="notesField">
+                    <label>备注</label>
+                    <textarea id="notes" placeholder="例如：HR 表示年终浮动较大；公司支持补充公积金；我更看重现金流。"></textarea>
+                  </div>
+                </div>
+              </form>
+            </div>
+          </div>
+
+          <div style="display:grid; gap:16px;">
+            <div class="assist-box">
+              <div class="section-head">
+                <div>
+                  <h3>识别结果</h3>
+                  <p>识别出的关键信息会先整理到这里，确认后即可继续。</p>
+                </div>
+                <span class="badge" id="recognitionBadge">识别置信度 92%</span>
+              </div>
+              <div class="assist-list" id="recognizedFields"></div>
+              <div class="modal-actions" style="margin-top:16px;">
+                <button class="primary-btn" id="parseTextBtn">解析 Offer 文本</button>
+                <button class="ghost-btn" id="applyTemplateBtn">应用当前模板</button>
+                <button class="ghost-btn" id="fillSampleBtn">填充示例</button>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-inner">
+                <div class="section-head">
+                  <div>
+                    <h3>下一步</h3>
+                    <p>保存之后可以继续测算、比较或回到历史记录。</p>
+                  </div>
+                </div>
+                <div class="assist-list">
+                  <div class="assist-item"><div class="row"><strong>保存记录</strong><span class="status neutral">历史记录</span></div><p>保存在历史记录里，后面可以继续编辑或加入对比。</p></div>
+                  <div class="assist-item"><div class="row"><strong>生成结果</strong><span class="status success">结果页</span></div><p>根据当前信息更新结果页与首页摘要。</p></div>
+                  <div class="assist-item"><div class="row"><strong>加入对比</strong><span class="status warn">对比页</span></div><p>把多个 Offer 放在同一口径下比较，报告会同步更新。</p></div>
+                </div>
+                <div class="modal-actions" style="margin-top:18px;">
+                  <button class="primary-btn" id="saveOfferBtn">保存到历史</button>
+                  <button class="ghost-btn" id="generateResultBtn">生成到手测算</button>
+                  <button class="ghost-btn" id="addToCompareBtn">加入对比</button>
+                  <button class="danger-btn" id="resetFormBtn">重置表单</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="screen" id="screen-result">
+        <div class="metric-hero">
+          <div class="card">
+            <div class="card-inner">
+              <div class="section-head">
+                <div>
+                  <h2>到手结果</h2>
+                  <p>在结果页里可以同时看到数字、结构和判断依据。</p>
+                </div>
+                <div class="segment" id="metricMode">
+                  <button class="active" data-mode="monthly">月度视角</button>
+                  <button data-mode="annual">年度视角</button>
+                  <button data-mode="package">总包视角</button>
+                </div>
+              </div>
+              <div class="muted" id="resultContext">当前展示：当前 Offer</div>
+              <div class="main-number" id="mainMetric">¥18,742</div>
+              <div class="muted" id="mainMetricDesc">预计每月到手，已扣除规则下的五险一金与个税，不含长期权益。</div>
+
+              <div class="insight-box">
+                <h4>结果解读</h4>
+                <p id="mainInsight">固定现金质量不错，长期权益存在但不主导判断，适合刚毕业先看现金流的用户。</p>
+              </div>
+
+              <div class="metric-grid" id="resultMetricCards"></div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-inner">
+              <div class="section-head">
+                <div>
+                  <h2 style="font-size:22px;">收入结构拆解</h2>
+                  <p>用统一口径把固定现金、税费、五险一金和潜在权益放到同一个画面里。</p>
+                </div>
+              </div>
+              <div class="bars" id="structureBars"></div>
+              <div class="legend-row">
+                <span class="legend"><i style="background:#315efb;"></i>固定现金</span>
+                <span class="legend"><i style="background:#f59e0b;"></i>个人所得税</span>
+                <span class="legend"><i style="background:#8b5cf6;"></i>五险一金</span>
+                <span class="legend"><i style="background:#06b6d4;"></i>潜在权益</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="two-col">
+          <div class="card">
+            <div class="card-inner">
+              <div class="section-head">
+                <div>
+                  <h2>关键判断</h2>
+                  <p>结合当前结构，给出更容易理解的判断。</p>
+                </div>
+              </div>
+              <div class="assist-list" id="judgementList"></div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-inner">
+              <div class="section-head">
+                <div>
+                  <h2 style="font-size:22px;">术语解释</h2>
+                  <p>用简短语言解释核心术语，方便快速理解。</p>
+                </div>
+              </div>
+              <div class="assist-list">
+                <div class="assist-item"><div class="row"><strong>总包是什么？</strong><span class="status neutral">术语</span></div><p>总包是名义价值，常包含工资、奖金、补贴和股权，不等于每月实际到手。</p></div>
+                <div class="assist-item"><div class="row"><strong>五险一金为什么让到手变少？</strong><span class="status neutral">术语</span></div><p>它会从税前扣除，短期到手降低，但也对应保障和储蓄，不应简单理解成“损失”。</p></div>
+                <div class="assist-item"><div class="row"><strong>股票 / 期权该怎么看？</strong><span class="status neutral">术语</span></div><p>它是潜在权益，建议作为加分项而不是直接替代现金，尤其是校招生第一份工作更要谨慎。</p></div>
+              </div>
+              <div class="modal-actions" style="margin-top:16px;">
+                <button class="ghost-btn" id="saveFromResultBtn">保存当前 Offer</button>
+                <button class="ghost-btn" id="toCompareFromResultBtn">加入对比</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="screen" id="screen-compare">
+        <div class="compare-layout">
+          <div class="card">
+            <div class="card-inner">
+              <div class="section-head">
+                <div>
+                  <h2>多 Offer 对比</h2>
+                  <p>将多个 Offer 放到同一口径下，快速看出差异。</p>
+                </div>
+                <div class="segment" id="preferenceMode">
+                  <button class="active" data-pref="cash">现金流优先</button>
+                  <button data-pref="stable">求稳优先</button>
+                  <button data-pref="growth">长期成长</button>
+                </div>
+              </div>
+              <div class="offer-tabs" id="compareTabs"></div>
+              <div class="modal-actions" style="margin-top:16px;">
+                <button class="ghost-btn" data-jump="history">从历史记录添加</button>
+                <button class="danger-btn" id="clearCompareBtn">清空对比集合</button>
+                <button class="primary-btn" id="aiAnalyzeBtn">🤖 AI 分析</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="card" id="aiReportCard" style="display:none;">
+            <div class="card-inner">
+              <div class="section-head">
+                <div>
+                  <h3>🤖 AI 分析报告</h3>
+                  <p>基于大模型的深度分析，为你的选择提供参考。</p>
+                </div>
+                <button class="ghost-btn" id="refreshAiReportBtn">重新分析</button>
+              </div>
+              <div id="aiReportContent">
+                <div style="text-align:center; padding:40px; color:#64748b;">
+                  <div style="font-size:48px; margin-bottom:16px;">🤔</div>
+                  <p>点击上方"AI 分析"按钮获取深度分析报告</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="recommend-card">
+            <div>
+              <h3 id="recommendTitle">推荐优先考虑 Offer A</h3>
+              <p id="recommendText">这里会根据当前偏好和对比集合动态更新推荐结论。</p>
+              <div class="reason-list" id="reasonList"></div>
+            </div>
+            <div class="card card-strong" style="border-radius:24px;">
+              <div class="card-inner">
+                <div class="section-head">
+                  <div>
+                    <h3>维度判断</h3>
+                    <p>用清晰标签和解释帮助你更快做出判断。</p>
+                  </div>
+                </div>
+                <div class="assist-list" id="compareInsights"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="table-wrap">
+            <table id="compareTable"></table>
+          </div>
+        </div>
+      </section>
+
+      <section class="screen" id="screen-history">
+        <div class="card">
+          <div class="card-inner">
+            <div class="section-head">
+              <div>
+                <h2>历史记录</h2>
+                <p>可搜索、筛选、继续编辑、复制和加入对比。</p>
+              </div>
+              <div class="modal-actions">
+                <button class="ghost-btn" id="refreshHistoryBtn">刷新列表</button>
+                <button class="danger-btn" id="clearHistoryBtn">清空全部历史</button>
+              </div>
+            </div>
+
+            <div class="history-toolbar">
+              <input id="historySearch" placeholder="搜索公司、岗位或城市，例如：上海 / 算法 / 外企" />
+              <select id="historyFilter">
+                <option value="all">全部记录</option>
+                <option value="compare">仅查看已加入对比</option>
+                <option value="favorite">仅查看星标</option>
+              </select>
+              <select id="historySort">
+                <option value="recent">按最近编辑</option>
+                <option value="cash">按年度税后现金</option>
+                <option value="package">按名义总包</option>
+              </select>
+            </div>
+
+            <div class="history-grid" id="historyGrid"></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="screen" id="screen-report">
+        <div class="card">
+          <div class="card-inner">
+            <div class="section-head">
+              <div>
+                <h2>一页式对比报告</h2>
+                <p>把对比结果整理成一页式摘要，方便回看或分享。</p>
+              </div>
+              <span class="badge">可导出</span>
+            </div>
+
+            <div class="recommend-card">
+              <div>
+                <h3 id="reportHeadline">当前更推荐 Offer A</h3>
+                <p id="reportSummary">报告摘要会跟随当前对比集合和偏好模式动态更新。</p>
+              </div>
+              <div>
+                <div class="assist-list" id="reportHighlights"></div>
+              </div>
+            </div>
+
+            <div class="report-grid" id="reportCards"></div>
+
+            <div class="card" id="reportAiSection" style="margin-top:24px; display:none;">
+              <div class="card-inner">
+                <div class="section-head">
+                  <div>
+                    <h3>🤖 AI 分析报告</h3>
+                    <p>基于大模型的深度分析，为你的选择提供参考。</p>
+                  </div>
+                </div>
+                <div id="reportAiContent">
+                  <div style="text-align:center; padding:40px; color:#64748b;">
+                    <div style="font-size:48px; margin-bottom:16px;">🤔</div>
+                    <p>AI分析结果将在这里显示</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="report-footer">
+              <div>
+                <strong>导出</strong>
+                <div class="muted" style="margin-top:4px;">支持分享链接、下载 JSON 和打印为 PDF。</div>
+              </div>
+              <div class="modal-actions">
+                <button class="ghost-btn" id="longImageBtn">长图布局</button>
+                <button class="ghost-btn" id="copyLinkBtn">复制分享链接</button>
+                <button class="ghost-btn" id="downloadJsonBtn">下载 JSON</button>
+                <button class="primary-btn" id="printReportBtn">导出 PDF</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script>
+    /* OfferPilot 单文件前端页面 */
+
+    const STORAGE_KEY = 'offerpilot_state_v2';
+    const CITY_RULES = {
+      '上海': { insuranceRate: 0.105, housingRate: 0.07, note: '口径已匹配' },
+      '北京': { insuranceRate: 0.102, housingRate: 0.12, note: '口径已匹配' },
+      '深圳': { insuranceRate: 0.098, housingRate: 0.07, note: '口径已匹配' },
+      '杭州': { insuranceRate: 0.095, housingRate: 0.12, note: '口径已匹配' },
+      '成都': { insuranceRate: 0.090, housingRate: 0.08, note: '口径已匹配' }
+    };
+
+    const TEMPLATES = {
+      internet: { city: '上海', company: '互联网大厂', position: '算法工程师', monthlySalary: 25000, salaryMonths: 15, bonusMonths: 3, housingRate: 'default', subsidyAnnual: 0, equityValue: 80000, offerText: 'Base 在上海，算法工程师，月薪 25k，15 薪，年终目标 3 个月，另有 8w RSU。', notes: '更看重平台和成长。' },
+      foreign: { city: '北京', company: '某外企', position: '产品分析师', monthlySalary: 23000, salaryMonths: 13, bonusMonths: 2, housingRate: 'default', subsidyAnnual: 12000, equityValue: 0, offerText: 'Base 在北京，13薪，年终 2 个月，补贴 1.2w。', notes: '结构清晰，节奏可能更平稳。' },
+      manufacture: { city: '成都', company: '制造业龙头', position: '研发工程师', monthlySalary: 18000, salaryMonths: 15, bonusMonths: 2, housingRate: 'default', subsidyAnnual: 8000, equityValue: 0, offerText: '成都，研发工程师，18k*15，年终 2 个月，补贴 8k。', notes: '城市生活成本更友好。' },
+      state: { city: '杭州', company: '某国企平台', position: '技术管培生', monthlySalary: 16000, salaryMonths: 14, bonusMonths: 1, housingRate: 'default', subsidyAnnual: 15000, equityValue: 0, offerText: '杭州，技术管培生，16k*14，年终 1 个月，补贴 1.5w。', notes: '稳定性优先。' }
+    };
+
+    const DEFAULT_DEMOS = [
+      { company: '大厂平台', position: '算法工程师', city: '上海', monthlySalary: 25000, salaryMonths: 15, bonusMonths: 3, housingRate: 'default', subsidyAnnual: 0, equityValue: 80000, riskPreference: 'balanced', notes: '平台与成长更平衡。' },
+      { company: '现金更高', position: '后端工程师', city: '杭州', monthlySalary: 27000, salaryMonths: 14, bonusMonths: 1, housingRate: 'default', subsidyAnnual: 10000, equityValue: 0, riskPreference: 'cash', notes: '更偏短期现金流。' },
+      { company: '成长弹性', position: 'AI 应用工程师', city: '深圳', monthlySalary: 22000, salaryMonths: 16, bonusMonths: 0.5, housingRate: 'default', subsidyAnnual: 0, equityValue: 200000, riskPreference: 'growth', notes: '股权弹性大，但不确定性也更高。' }
+    ];
+
+    const state = loadState();
+    const els = {
+      screens: document.querySelectorAll('.screen'),
+      pills: document.querySelectorAll('.nav-pill'),
+      historyGrid: document.getElementById('historyGrid'),
+      compareTabs: document.getElementById('compareTabs'),
+      compareTable: document.getElementById('compareTable'),
+      reasonList: document.getElementById('reasonList'),
+      compareInsights: document.getElementById('compareInsights'),
+      recentHistoryList: document.getElementById('recentHistoryList'),
+      cityRow: document.getElementById('cityRow'),
+      homeMicroList: document.getElementById('homeMicroList'),
+      resultMetricCards: document.getElementById('resultMetricCards'),
+      structureBars: document.getElementById('structureBars'),
+      judgementList: document.getElementById('judgementList'),
+      recognizedFields: document.getElementById('recognizedFields'),
+      reportHighlights: document.getElementById('reportHighlights'),
+      reportCards: document.getElementById('reportCards')
+    };
+
+    const formIds = ['company','position','city','monthlySalary','salaryMonths','bonusMonths','housingRate','subsidyAnnual','equityValue','riskPreference','offerText','notes'];
+    const formEl = Object.fromEntries(formIds.map(id => [id, document.getElementById(id)]));
+
+    init();
+
+    function init() {
+      ensureSeedData();
+      bindEvents();
+      syncFormWithCurrentOffer();
+      renderAll();
+      applyHashRoute();
+    }
+
+    function bindEvents() {
+      els.pills.forEach(btn => btn.addEventListener('click', () => showScreen(btn.dataset.screen)));
+      document.querySelectorAll('[data-jump]').forEach(btn => btn.addEventListener('click', () => showScreen(btn.dataset.jump)));
+
+      document.getElementById('metricMode').querySelectorAll('button').forEach(btn => {
+        btn.addEventListener('click', () => {
+          setActiveSegment('#metricMode', btn);
+          state.metricMode = btn.dataset.mode;
+          persist();
+          renderResult();
+        });
+      });
+
+      document.getElementById('preferenceMode').querySelectorAll('button').forEach(btn => {
+        btn.addEventListener('click', () => {
+          setActiveSegment('#preferenceMode', btn);
+          state.preferenceMode = btn.dataset.pref;
+          persist();
+          renderCompare();
+          renderReport();
+        });
+      });
+
+      document.getElementById('inputModeSegment').querySelectorAll('button').forEach(btn => {
+        btn.addEventListener('click', () => {
+          setActiveSegment('#inputModeSegment', btn);
+          state.inputMode = btn.dataset.inputMode;
+          persist();
+          updateInputModeUI();
+        });
+      });
+
+      document.querySelectorAll('[data-template]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          applyTemplate(btn.dataset.template);
+        });
+      });
+
+      document.querySelectorAll('[data-salary-mode]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          document.querySelectorAll('[data-salary-mode]').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          state.salaryMode = btn.dataset.salaryMode;
+        });
+      });
+
+      document.querySelectorAll('[data-fill]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          if (btn.dataset.fill === 'guess') {
+            applyTemplate(state.selectedTemplate || 'internet');
+          }
+        });
+      });
+
+      document.getElementById('parseTextBtn').addEventListener('click', handleParseText);
+      document.getElementById('heroParseBtn').addEventListener('click', () => { showScreen('input'); handleParseText(); });
+      document.getElementById('applyTemplateBtn').addEventListener('click', () => applyTemplate(state.selectedTemplate || 'internet'));
+      document.getElementById('fillSampleBtn').addEventListener('click', () => { fillSample(); flashButton(document.getElementById('fillSampleBtn'), '已填充'); });
+      document.getElementById('seedDemoBtn').addEventListener('click', () => { formReset(); showScreen('input'); flashButton(document.getElementById('seedDemoBtn'), '已新建'); });
+      document.getElementById('ruleStatusBtn').addEventListener('click', () => { showScreen('history'); });
+
+      document.getElementById('saveOfferBtn').addEventListener('click', () => {
+        const offer = buildOfferFromForm();
+        saveOffer(offer, true);
+        renderAll();
+        flashButton(document.getElementById('saveOfferBtn'), '已保存');
+      });
+
+      document.getElementById('generateResultBtn').addEventListener('click', () => {
+        const offer = buildOfferFromForm();
+        saveOffer(offer, false);
+        state.currentOfferId = offer.id;
+        persist();
+        renderAll();
+        showScreen('result');
+      });
+
+      document.getElementById('addToCompareBtn').addEventListener('click', () => {
+        const offer = buildOfferFromForm();
+        saveOffer(offer, false);
+        addToCompare(offer.id);
+        state.currentOfferId = offer.id;
+        persist();
+        renderAll();
+        showScreen('compare');
+      });
+
+      document.getElementById('saveFromResultBtn').addEventListener('click', () => {
+        const offer = getCurrentOffer() || buildOfferFromForm();
+        saveOffer(offer, true);
+        renderAll();
+        flashButton(document.getElementById('saveFromResultBtn'), '已保存');
+      });
+
+      document.getElementById('toCompareFromResultBtn').addEventListener('click', () => {
+        const offer = getCurrentOffer() || buildOfferFromForm();
+        saveOffer(offer, false);
+        addToCompare(offer.id);
+        renderAll();
+        showScreen('compare');
+      });
+
+      document.getElementById('resetFormBtn').addEventListener('click', () => { formReset(); flashButton(document.getElementById('resetFormBtn'), '已重置'); });
+      document.getElementById('clearCompareBtn').addEventListener('click', () => {
+        state.compareIds = [];
+        persist();
+        renderAll();
+        flashButton(document.getElementById('clearCompareBtn'), '已清空');
+      });
+      
+      // AI分析功能
+      const AI_CONFIG = {
+        baseUrl: 'https://xiaoai.plus/v1',
+        apiKey: 'sk-vGhwJfOCd4YrbwIPoQgaeWBXKk1cSEHkXOySoGJ6TdGjq37M',
+        model: 'gpt-4o'
+      };
+      
+      async function callAIAnalysis(offers) {
+        const aiBtn = document.getElementById('aiAnalyzeBtn');
+        const reportContent = document.getElementById('aiReportContent');
+        
+        if (offers.length < 2) {
+          alert('请至少添加2个Offer进行对比分析');
+          return;
+        }
+        
+        aiBtn.disabled = true;
+        aiBtn.textContent = '🤖 分析中...';
+        
+        try {
+          const prompt = buildAnalysisPrompt(offers);
+          const response = await fetch(`${AI_CONFIG.baseUrl}/chat/completions`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `${AI_CONFIG.apiKey}`
+            },
+            body: JSON.stringify({
+              model: AI_CONFIG.model,
+              messages: [{ role: 'user', content: prompt }],
+              temperature: 0.7
+            })
+          });
+          
+          if (!response.ok) {
+            throw new Error(`API请求失败: ${response.status}`);
+          }
+          
+          const data = await response.json();
+          const result = data.choices?.[0]?.message?.content;
+          
+          if (result) {
+            document.getElementById('aiReportCard').style.display = 'block';
+            reportContent.innerHTML = formatMarkdown(result);
+            
+            // 同时更新报告页面的AI分析内容
+            const reportAiSection = document.getElementById('reportAiSection');
+            const reportAiContent = document.getElementById('reportAiContent');
+            if (reportAiSection && reportAiContent) {
+              reportAiSection.style.display = 'block';
+              reportAiContent.innerHTML = formatMarkdown(result);
+            }
+          } else {
+            reportContent.innerHTML = '<p style="text-align:center; color:#dc2626;">获取AI分析失败，请重试</p>';
+          }
+        } catch (error) {
+          console.error('AI分析出错:', error);
+          reportContent.innerHTML = `
+            <p style="text-align:center; color:#dc2626;">分析失败: ${error.message}</p>
+            <p style="text-align:center; color:#64748b; font-size:13px; margin-top:12px;">请检查API配置是否正确</p>
+          `;
+        } finally {
+          aiBtn.disabled = false;
+          aiBtn.textContent = '🤖 AI 分析';
+        }
+      }
+      
+      function buildAnalysisPrompt(offers) {
+        const offerDetails = offers.map((offer, index) => `
+Offer ${index + 1}:
+- 公司: ${offer.company || '未命名'}
+- 岗位: ${offer.position || '未指定'}
+- 城市: ${offer.city || '未指定'}
+- 月薪: ¥${offer.monthlySalary?.toLocaleString() || 0}
+- 发薪月数: ${offer.salaryMonths || 12} 薪
+- 年终奖: ${offer.bonusMonths || 0} 个月
+- 年度补贴: ¥${offer.subsidyAnnual?.toLocaleString() || 0}
+- 股票/期权: ¥${offer.equityValue?.toLocaleString() || 0}
+- 公积金比例: ${offer.housingRate === 'default' ? '默认' : (offer.housingRate * 100) + '%'}
+- 年度税后现金: ¥${offer.annualNetCash?.toLocaleString() || 0}
+- 每月到手: ¥${offer.monthlyTakeHome?.toLocaleString() || 0}
+`).join('\n');
+
+        return `
+请帮我分析以下几个Offer，给出专业的对比建议：
+
+${offerDetails}
+
+请从以下几个维度进行分析：
+1. 薪资对比：对比各Offer的年度税后现金、每月到手收入
+2. 收入结构：分析固定收入与浮动收入的比例，评估收入稳定性
+3. 长期价值：考虑股票期权等长期激励的价值
+4. 综合建议：根据分析给出优先级排序和选择建议
+
+请用中文输出，格式清晰，结构分明。
+`;
+      }
+      
+      function formatMarkdown(text) {
+        return text
+          .replace(/### (.*)/g, '<h4>$1</h4>')
+          .replace(/## (.*)/g, '<h3>$1</h3>')
+          .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+          .replace(/\n\n/g, '</p><p>')
+          .replace(/\n/g, '<br>')
+          .replace(/^- /gm, '<li>')
+          .replace(/^(?:\d+\.) /gm, '<li>')
+          .replace(/<li>(.*?)(?=\n<li>|\n\n|<\/p>)/g, '<li>$1</li>')
+          .replace(/(<li>.*?<\/li>)+/g, '<ul>$&</ul>')
+          .replace(/<p><\/p>/g, '')
+          .replace(/^<p>/, '')
+          .replace(/<\/p>$/, '');
+      }
+      
+      document.getElementById('aiAnalyzeBtn').addEventListener('click', () => {
+        const compareOffers = state.compareIds.map(id => state.offers.find(o => o.id === id)).filter(Boolean);
+        callAIAnalysis(compareOffers);
+      });
+      
+      document.getElementById('refreshAiReportBtn').addEventListener('click', () => {
+        const compareOffers = state.compareIds.map(id => state.offers.find(o => o.id === id)).filter(Boolean);
+        callAIAnalysis(compareOffers);
+      });
+      
+      document.getElementById('clearHistoryBtn').addEventListener('click', () => {
+        if (!confirm('确认清空全部历史记录吗？')) return;
+        state.offers = [];
+        state.compareIds = [];
+        state.currentOfferId = null;
+        persist();
+        fillSample();
+        renderAll();
+        flashButton(document.getElementById('clearHistoryBtn'), '已清空');
+      });
+      document.getElementById('refreshHistoryBtn').addEventListener('click', () => { renderHistory(); flashButton(document.getElementById('refreshHistoryBtn'), '已刷新'); });
+      document.getElementById('exportTopBtn').addEventListener('click', () => { showScreen('report'); window.print(); });
+      document.getElementById('printReportBtn').addEventListener('click', () => window.print());
+      document.getElementById('copyLinkBtn').addEventListener('click', copyShareLink);
+      document.getElementById('downloadJsonBtn').addEventListener('click', downloadJSON);
+      document.getElementById('longImageBtn').addEventListener('click', () => {
+        showScreen('report');
+        document.body.classList.toggle('report-capture-mode');
+        const btn = document.getElementById('longImageBtn');
+        btn.textContent = document.body.classList.contains('report-capture-mode') ? '退出长图布局' : '长图布局';
+      });
+
+      document.getElementById('historySearch').addEventListener('input', renderHistory);
+      document.getElementById('historyFilter').addEventListener('change', renderHistory);
+      document.getElementById('historySort').addEventListener('change', renderHistory);
+
+      formIds.forEach(id => formEl[id].addEventListener('input', renderRecognizedFields));
+      formEl.city.addEventListener('change', renderRecognizedFields);
+      formEl.salaryMonths.addEventListener('change', renderRecognizedFields);
+      formEl.housingRate.addEventListener('change', renderRecognizedFields);
+
+      window.addEventListener('hashchange', applyHashRoute);
+    }
+
+    function loadState() {
+      try {
+        return Object.assign({
+          offers: [],
+          compareIds: [],
+          currentOfferId: null,
+          selectedTemplate: 'internet',
+          inputMode: 'manual',
+          metricMode: 'monthly',
+          preferenceMode: 'cash',
+          salaryMode: 'monthly'
+        }, JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}'));
+      } catch (e) {
+        return { offers: [], compareIds: [], currentOfferId: null, selectedTemplate: 'internet', inputMode: 'manual', metricMode: 'monthly', preferenceMode: 'cash', salaryMode: 'monthly' };
+      }
+    }
+
+    function persist() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    }
+
+    function ensureSeedData() {
+      if (state.offers.length) return;
+      state.offers = DEFAULT_DEMOS.map((offer, idx) => enrichOffer(offer, idx === 0 ? 'A' : idx === 1 ? 'B' : 'C'));
+      state.currentOfferId = state.offers[0].id;
+      state.compareIds = state.offers.map(o => o.id);
+      persist();
+    }
+
+    function resetToDemoData() {
+      state.offers = DEFAULT_DEMOS.map((offer, idx) => enrichOffer(offer, idx === 0 ? 'A' : idx === 1 ? 'B' : 'C'));
+      state.currentOfferId = state.offers[0].id;
+      state.compareIds = state.offers.map(o => o.id);
+      state.metricMode = 'monthly';
+      state.preferenceMode = 'cash';
+      state.selectedTemplate = 'internet';
+      persist();
+      syncFormWithCurrentOffer();
+      renderAll();
+    }
+
+    function applyHashRoute() {
+      const hash = location.hash.replace('#', '');
+      if (!hash) return;
+      const [screen, query = ''] = hash.split('?');
+      const params = new URLSearchParams(query);
+      if (screen) showScreen(screen, false);
+      if (params.get('offer')) state.currentOfferId = params.get('offer');
+      if (params.get('compare')) state.compareIds = params.get('compare').split(',').filter(Boolean);
+      if (params.get('pref')) state.preferenceMode = params.get('pref');
+      persist();
+      renderAll();
+    }
+
+    function showScreen(name, updateHash = true) {
+      els.screens.forEach(s => s.classList.toggle('active', s.id === `screen-${name}`));
+      els.pills.forEach(p => p.classList.toggle('active', p.dataset.screen === name));
+      if (updateHash) {
+        const params = new URLSearchParams();
+        if (state.currentOfferId) params.set('offer', state.currentOfferId);
+        if (state.compareIds.length) params.set('compare', state.compareIds.join(','));
+        if (state.preferenceMode) params.set('pref', state.preferenceMode);
+        history.replaceState(null, '', `#${name}${params.toString() ? `?${params.toString()}` : ''}`);
+      }
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function setActiveSegment(selector, targetButton) {
+      document.querySelectorAll(`${selector} button`).forEach(b => b.classList.remove('active'));
+      targetButton.classList.add('active');
+    }
+
+    function getCurrentOffer() {
+      return state.offers.find(o => o.id === state.currentOfferId) || state.offers[0] || null;
+    }
+
+    function enrichOffer(raw, fallbackCode) {
+      const id = raw.id || `offer_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
+      const code = raw.code || fallbackCode || String.fromCharCode(65 + (state.offers?.length || 0));
+      const offer = {
+        id,
+        code,
+        company: raw.company || '未命名 Offer',
+        position: raw.position || '未填写岗位',
+        city: raw.city || '上海',
+        monthlySalary: Number(raw.monthlySalary || 0),
+        salaryMonths: Number(raw.salaryMonths || 12),
+        bonusMonths: Number(raw.bonusMonths || 0),
+        housingRate: raw.housingRate ?? 'default',
+        subsidyAnnual: Number(raw.subsidyAnnual || 0),
+        equityValue: Number(raw.equityValue || 0),
+        riskPreference: raw.riskPreference || 'balanced',
+        offerText: raw.offerText || '',
+        notes: raw.notes || '',
+        isFavorite: Boolean(raw.isFavorite),
+        updatedAt: raw.updatedAt || new Date().toISOString()
+      };
+      return Object.assign(offer, calculateOffer(offer));
+    }
+
+    function calculateOffer(offer) {
+      const rules = CITY_RULES[offer.city] || CITY_RULES['上海'];
+      const housingRate = offer.housingRate === 'default' ? rules.housingRate : Number(offer.housingRate || rules.housingRate);
+      const insuranceMonthly = offer.monthlySalary * rules.insuranceRate;
+      const housingMonthly = offer.monthlySalary * housingRate;
+      const annualGrossFixed = offer.monthlySalary * offer.salaryMonths + offer.subsidyAnnual;
+      const annualBonus = offer.monthlySalary * offer.bonusMonths;
+      const annualGrossCash = annualGrossFixed + annualBonus;
+      const annualInsurance = insuranceMonthly * 12;
+      const annualHousing = housingMonthly * 12;
+      const taxableAnnual = Math.max(0, annualGrossCash - annualInsurance - annualHousing - 60000);
+      const annualTax = calcChinaTax(taxableAnnual);
+      const annualNetCash = annualGrossCash - annualInsurance - annualHousing - annualTax;
+      const monthlyTaxApprox = annualTax / 12;
+      const monthlyTakeHome = offer.monthlySalary - insuranceMonthly - housingMonthly - monthlyTaxApprox;
+      const packageValue = annualGrossCash + offer.equityValue;
+
+      const fixedRatio = annualGrossCash ? annualGrossFixed / annualGrossCash : 0;
+      const floatRatio = annualGrossCash ? annualBonus / annualGrossCash : 0;
+      const equityRatio = packageValue ? offer.equityValue / packageValue : 0;
+      const stabilityScore = Math.round(100 - floatRatio * 25 - equityRatio * 35 + fixedRatio * 10);
+      const growthScore = Math.round(60 + equityRatio * 40 + (offer.salaryMonths >= 15 ? 8 : 0));
+      const cashScore = Math.round((annualNetCash / Math.max(...state.offers.map(o => o.annualNetCash || annualNetCash), annualNetCash)) * 100);
+
+      return {
+        rules,
+        housingRateUsed: housingRate,
+        insuranceMonthly,
+        housingMonthly,
+        annualGrossFixed,
+        annualBonus,
+        annualGrossCash,
+        annualInsurance,
+        annualHousing,
+        annualTax,
+        annualNetCash,
+        monthlyTaxApprox,
+        monthlyTakeHome,
+        packageValue,
+        fixedRatio,
+        floatRatio,
+        equityRatio,
+        stabilityScore,
+        growthScore,
+        cashScore
+      };
+    }
+
+    function calcChinaTax(taxableAnnual) {
+      const brackets = [
+        [36000, 0.03, 0],
+        [144000, 0.10, 2520],
+        [300000, 0.20, 16920],
+        [420000, 0.25, 31920],
+        [660000, 0.30, 52920],
+        [960000, 0.35, 85920],
+        [Infinity, 0.45, 181920]
+      ];
+      const [limit, rate, deduction] = brackets.find(([limit]) => taxableAnnual <= limit);
+      return Math.max(0, taxableAnnual * rate - deduction);
+    }
+
+    function buildOfferFromForm() {
+      let monthlySalary = Number(formEl.monthlySalary.value || 0);
+      const bonusMonths = Number(formEl.bonusMonths.value || 0);
+      const salaryMonths = Number(formEl.salaryMonths.value || 12);
+      const subsidyAnnual = Number(formEl.subsidyAnnual.value || 0);
+      const equityValue = Number(formEl.equityValue.value || 0);
+
+      if (state.salaryMode === 'package' && monthlySalary > 0) {
+        const assumedPackage = monthlySalary;
+        const months = Math.max(salaryMonths + bonusMonths, 12);
+        monthlySalary = Math.round((assumedPackage - equityValue - subsidyAnnual) / Math.max(months, 1));
+      }
+
+      return enrichOffer({
+        id: state.currentOfferId || undefined,
+        code: getCurrentOffer()?.code,
+        company: formEl.company.value.trim(),
+        position: formEl.position.value.trim(),
+        city: formEl.city.value,
+        monthlySalary,
+        salaryMonths,
+        bonusMonths,
+        housingRate: formEl.housingRate.value,
+        subsidyAnnual,
+        equityValue,
+        riskPreference: formEl.riskPreference.value,
+        offerText: formEl.offerText.value.trim(),
+        notes: formEl.notes.value.trim(),
+        isFavorite: getCurrentOffer()?.isFavorite || false,
+        updatedAt: new Date().toISOString()
+      });
+    }
+
+    function saveOffer(offer, forceNew = false) {
+      if (forceNew && state.offers.some(o => o.id === offer.id)) {
+        offer.id = `offer_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
+        offer.code = nextOfferCode();
+      }
+      const idx = state.offers.findIndex(o => o.id === offer.id);
+      if (idx >= 0) {
+        state.offers[idx] = offer;
+      } else {
+        if (!offer.code) offer.code = nextOfferCode();
+        state.offers.unshift(offer);
+      }
+      state.currentOfferId = offer.id;
+      persist();
+      syncFormWithCurrentOffer();
+    }
+
+    function nextOfferCode() {
+      const used = new Set(state.offers.map(o => o.code));
+      for (let i = 0; i < 26; i++) {
+        const code = String.fromCharCode(65 + i);
+        if (!used.has(code)) return code;
+      }
+      return `X${state.offers.length + 1}`;
+    }
+
+    function addToCompare(id) {
+      if (!state.compareIds.includes(id)) state.compareIds.push(id);
+      persist();
+      
+    }
+
+    function removeFromCompare(id) {
+      state.compareIds = state.compareIds.filter(x => x !== id);
+      persist();
+      renderAll();
+      
+    }
+
+    function syncFormWithCurrentOffer() {
+      const offer = getCurrentOffer() || state.offers[0];
+      if (!offer) { fillSample(); return; }
+      formEl.company.value = offer.company || '';
+      formEl.position.value = offer.position || '';
+      formEl.city.value = offer.city || '上海';
+      formEl.monthlySalary.value = offer.monthlySalary || 0;
+      formEl.salaryMonths.value = offer.salaryMonths || 12;
+      formEl.bonusMonths.value = offer.bonusMonths || 0;
+      formEl.housingRate.value = String(offer.housingRate ?? 'default');
+      formEl.subsidyAnnual.value = offer.subsidyAnnual || 0;
+      formEl.equityValue.value = offer.equityValue || 0;
+      formEl.riskPreference.value = offer.riskPreference || 'balanced';
+      formEl.offerText.value = offer.offerText || `${offer.city}，${offer.position}，月薪 ${formatK(offer.monthlySalary)}，${offer.salaryMonths} 薪，年终 ${offer.bonusMonths} 个月。`;
+      formEl.notes.value = offer.notes || '';
+      renderRecognizedFields();
+    }
+
+    function fillSample() {
+      applyTemplate('internet');
+    }
+
+    function formReset() {
+      state.currentOfferId = null;
+      formEl.company.value = '';
+      formEl.position.value = '';
+      formEl.city.value = '上海';
+      formEl.monthlySalary.value = 25000;
+      formEl.salaryMonths.value = 15;
+      formEl.bonusMonths.value = 3;
+      formEl.housingRate.value = 'default';
+      formEl.subsidyAnnual.value = 0;
+      formEl.equityValue.value = 0;
+      formEl.riskPreference.value = 'balanced';
+      formEl.offerText.value = '';
+      formEl.notes.value = '';
+      renderRecognizedFields();
+    }
+
+    function applyTemplate(key) {
+      const t = TEMPLATES[key] || TEMPLATES.internet;
+      formEl.company.value = t.company;
+      formEl.position.value = t.position;
+      formEl.city.value = t.city;
+      formEl.monthlySalary.value = t.monthlySalary;
+      formEl.salaryMonths.value = t.salaryMonths;
+      formEl.bonusMonths.value = t.bonusMonths;
+      formEl.housingRate.value = t.housingRate;
+      formEl.subsidyAnnual.value = t.subsidyAnnual;
+      formEl.equityValue.value = t.equityValue;
+      formEl.riskPreference.value = t.riskPreference || 'balanced';
+      formEl.offerText.value = t.offerText;
+      formEl.notes.value = t.notes;
+      state.selectedTemplate = key;
+      state.inputMode = 'template';
+      persist();
+      document.querySelectorAll('[data-template]').forEach(b => b.classList.toggle('active', b.dataset.template === key));
+      document.querySelectorAll('#inputModeSegment button').forEach(b => b.classList.toggle('active', b.dataset.inputMode === 'template'));
+      updateInputModeUI();
+      renderRecognizedFields();
+      
+    }
+
+    function labelForTemplate(key) {
+      return {
+        internet: '互联网大厂',
+        foreign: '外企',
+        manufacture: '制造业研发',
+        state: '国企'
+      }[key] || key;
+    }
+
+    function handleParseText() {
+      const parsed = parseOfferText(formEl.offerText.value || '');
+      if (!parsed) {
+        flashButton(document.getElementById('parseTextBtn'), '未识别');
+        return;
+      }
+      Object.entries(parsed).forEach(([key, value]) => {
+        if (formEl[key] && value !== undefined && value !== null && value !== '') formEl[key].value = value;
+      });
+      state.inputMode = 'text';
+      persist();
+      document.querySelectorAll('#inputModeSegment button').forEach(b => b.classList.toggle('active', b.dataset.inputMode === 'text'));
+      updateInputModeUI();
+      renderRecognizedFields();
+      flashButton(document.getElementById('parseTextBtn'), '已填充');
+    }
+
+    function parseOfferText(text) {
+      if (!text.trim()) return null;
+      const city = Object.keys(CITY_RULES).find(city => text.includes(city));
+      const salaryMatch = text.match(/(?:月薪|base|薪资|工资)?\s*(\d+(?:\.\d+)?)\s*([kKwW万]?)/i);
+      const monthsMatch = text.match(/(\d{1,2})\s*薪/);
+      const bonusMatch = text.match(/年终(?:目标)?\s*(\d+(?:\.\d+)?)\s*(?:个)?月/);
+      const equityMatch = text.match(/(\d+(?:\.\d+)?)\s*([wW万])\s*(?:RSU|rsu|期权|股票)/);
+      const company = (text.match(/(?:公司|企业|offer来自)[:：]?\s*([^，。,\n]+)/) || [])[1];
+      const position = (text.match(/(?:岗位|职位)[:：]?\s*([^，。,\n]+)/) || [])[1] || (text.includes('算法') ? '算法工程师' : text.includes('产品') ? '产品经理' : text.includes('研发') ? '研发工程师' : '');
+      return {
+        city: city || undefined,
+        company: company || undefined,
+        position: position || undefined,
+        monthlySalary: salaryMatch ? normalizeMoneyToken(salaryMatch[1], salaryMatch[2]) : undefined,
+        salaryMonths: monthsMatch ? Number(monthsMatch[1]) : undefined,
+        bonusMonths: bonusMatch ? Number(bonusMatch[1]) : undefined,
+        equityValue: equityMatch ? normalizeMoneyToken(equityMatch[1], equityMatch[2]) : undefined
+      };
+    }
+
+    function normalizeMoneyToken(value, unit) {
+      const n = Number(value || 0);
+      if (!unit) return n;
+      if (/k/i.test(unit)) return Math.round(n * 1000);
+      if (/w|万/i.test(unit)) return Math.round(n * 10000);
+      return Math.round(n);
+    }
+
+    function renderAll() {
+      updateInputModeUI();
+      renderHome();
+      renderResult();
+      renderCompare();
+      renderHistory();
+      renderRecognizedFields();
+      renderReport();
+      syncSegmentsFromState();
+    }
+
+    function syncSegmentsFromState() {
+      document.querySelectorAll('#metricMode button').forEach(b => b.classList.toggle('active', b.dataset.mode === state.metricMode));
+      document.querySelectorAll('#preferenceMode button').forEach(b => b.classList.toggle('active', b.dataset.pref === state.preferenceMode));
+      document.querySelectorAll('#inputModeSegment button').forEach(b => b.classList.toggle('active', b.dataset.inputMode === state.inputMode));
+    }
+
+    function updateInputModeUI() {
+      const isText = state.inputMode === 'text';
+      const isTemplate = state.inputMode === 'template';
+      document.getElementById('textInputField').style.display = isText || isTemplate || state.inputMode === 'manual' ? 'grid' : 'none';
+      document.getElementById('templatePills').style.opacity = isTemplate ? '1' : '.78';
+      
+      const formGrid = document.querySelector('#offerForm .form-grid');
+      const otherFields = document.querySelectorAll('#offerForm .field:not(#textInputField):not(#notesField)');
+      
+      if (isText) {
+        otherFields.forEach(field => field.style.display = 'none');
+        formGrid.style.gap = '16px';
+        formGrid.style.gridTemplateColumns = '1fr';
+      } else {
+        otherFields.forEach(field => field.style.display = 'grid');
+        formGrid.style.gap = '';
+        formGrid.style.gridTemplateColumns = '';
+      }
+    }
+
+    function renderHome() {
+      const current = getCurrentOffer() || state.offers[0];
+      const offers = [...state.offers].sort((a,b) => new Date(b.updatedAt) - new Date(a.updatedAt));
+      els.cityRow.innerHTML = Object.keys(CITY_RULES).map(city => `<span class="chip">${city}</span>`).join('');
+
+      if (current) {
+        document.getElementById('homeSummaryValue').textContent = money(current.monthlyTakeHome);
+        document.getElementById('homeSummaryMetaA').textContent = `${current.city} · ${current.company || '未命名'} · ${formatK(current.monthlySalary)}`;
+        document.getElementById('homeSummaryMetaB').textContent = `${current.salaryMonths} 薪 · 年税后 ${money(current.annualNetCash)}`;
+        els.homeMicroList.innerHTML = `
+          <div class="micro-item"><span>固定现金</span><strong>${money(current.annualGrossFixed)}</strong></div>
+          <div class="micro-item"><span>浮动收入</span><strong>${money(current.annualBonus)}</strong></div>
+          <div class="micro-item"><span>潜在权益</span><strong>${money(current.equityValue)}</strong></div>
+          <div class="micro-item"><span>推荐偏好</span><span class="status ${preferenceTone(current.riskPreference)}">${preferenceLabel(current.riskPreference)}</span></div>
+        `;
+      }
+
+      els.recentHistoryList.innerHTML = offers.length ? offers.slice(0, 3).map(offer => `
+        <div class="history-card" style="margin-bottom:12px;">
+          <h3>${offer.code ? `Offer ${offer.code} · ` : ''}${escapeHtml(offer.company)}</h3>
+          <p>${escapeHtml(offer.position)} · ${offer.city}</p>
+          <div class="meta-row">
+            <span class="tag primary">月到手 ${money(offer.monthlyTakeHome)}</span>
+            <span class="tag success">年税后 ${money(offer.annualNetCash)}</span>
+          </div>
+          <div class="history-actions">
+            <button class="ghost-btn" data-action="load" data-id="${offer.id}">查看</button>
+            <button class="ghost-btn" data-action="compare" data-id="${offer.id}">${state.compareIds.includes(offer.id) ? '已在对比中' : '加入对比'}</button>
+          </div>
+        </div>
+      `).join('') : `<div class="empty-state">还没有保存过 Offer。你可以先去录入页面试一下。</div>`;
+
+      bindDynamicActions(els.recentHistoryList);
+    }
+
+    function renderRecognizedFields() {
+      const draft = buildOfferFromForm();
+      const confidence = Math.min(99, Math.max(81, Math.round(86 + (formEl.offerText.value.trim() ? 8 : 0) + (formEl.company.value ? 2 : 0) + (formEl.position.value ? 2 : 0))));
+      document.getElementById('recognitionBadge').textContent = `识别置信度 ${confidence}%`;
+      els.recognizedFields.innerHTML = [
+        ['城市', `${draft.city} · 社保与公积金口径已匹配`],
+        ['固定现金', `${formatK(draft.monthlySalary)} × ${draft.salaryMonths} 薪`],
+        ['浮动收入', draft.bonusMonths ? `年终 ${draft.bonusMonths} 个月` : '暂无年终录入'],
+        ['潜在权益', draft.equityValue ? `${money(draft.equityValue)} 股权/期权` : '未录入'],
+        ['预计月到手', money(draft.monthlyTakeHome)],
+        ['预计年税后', money(draft.annualNetCash)]
+      ].map(([title, sub], idx) => `
+        <div class="assist-item">
+          <div class="row"><strong>${title}</strong><span class="status ${idx < 2 ? 'success' : idx < 4 ? 'warn' : 'neutral'}">${idx < 4 ? '已识别' : '测算'}</span></div>
+          <p>${sub}</p>
+        </div>
+      `).join('');
+    }
+
+    function renderResult() {
+      const current = getCurrentOffer() || buildOfferFromForm();
+      if (!current) return;
+
+      const metricConfigs = {
+        monthly: {
+          value: money(current.monthlyTakeHome),
+          desc: `预计每月到手，已扣除五险一金与个税，不含 ${current.equityValue ? '长期权益' : '额外潜在权益'}。`
+        },
+        annual: {
+          value: money(current.annualNetCash),
+          desc: '预计年度税后现金，包含固定工资、补贴与年终，不含长期未兑现权益。'
+        },
+        package: {
+          value: money(current.packageValue),
+          desc: '名义总包，用于看整体吸引力，不应直接替代“真实到手”。'
+        }
+      };
+
+      document.getElementById('resultContext').textContent = `当前展示：${current.city} · ${current.company} · ${current.position}`;
+      document.getElementById('mainMetric').textContent = metricConfigs[state.metricMode].value;
+      document.getElementById('mainMetricDesc').textContent = metricConfigs[state.metricMode].desc;
+      document.getElementById('mainInsight').innerHTML = generateInsight(current);
+
+      els.resultMetricCards.innerHTML = [
+        ['社保与公积金', money(current.annualInsurance + current.annualHousing), `员工侧合计。${current.housingRate === 'default' ? '当前使用当地默认公积金比例。' : '当前使用自定义公积金比例。'}`],
+        ['个人所得税', money(current.annualTax), '基于当前录入信息进行估算，默认按综合所得口径展示。'],
+        ['潜在权益', money(current.equityValue), current.equityValue ? '默认不纳入现金，单独展示为潜在权益。' : '当前未录入股权/期权。']
+      ].map(([k, v, d]) => `<div class="metric-card"><div class="k">${k}</div><div class="v">${v}</div><div class="d">${d}</div></div>`).join('');
+
+      const total = Math.max(current.packageValue, 1);
+      const segments = [
+        ['固定现金', current.annualGrossFixed, '#315efb'],
+        ['个人所得税', current.annualTax, '#f59e0b'],
+        ['五险一金', current.annualInsurance + current.annualHousing, '#8b5cf6'],
+        ['潜在权益', current.equityValue, '#06b6d4']
+      ];
+      els.structureBars.innerHTML = segments.map(([label, value, color]) => {
+        const width = Math.max(4, Math.round((value / total) * 100));
+        return `
+          <div class="bar-row">
+            <div><strong>${label}</strong></div>
+            <div class="bar-track"><div class="bar-fill" style="width:${width}%;background:${color};"></div></div>
+            <div><strong>${Math.round((value / total) * 100)}%</strong></div>
+          </div>
+        `;
+      }).join('');
+
+      els.judgementList.innerHTML = buildJudgements(current).map(item => `
+        <div class="assist-item">
+          <div class="row"><strong>${item.title}</strong><span class="status ${item.tone}">${item.badge}</span></div>
+          <p>${item.body}</p>
+        </div>
+      `).join('');
+    }
+
+    function generateInsight(offer) {
+      const fixedGood = offer.fixedRatio >= 0.85;
+      const equityHeavy = offer.equityRatio >= 0.18;
+      const bonusHeavy = offer.floatRatio >= 0.18;
+      if (fixedGood && !equityHeavy) return `这份 Offer 的<strong>固定现金质量较高</strong>，每月到手与年度税后现金都比较稳，适合刚毕业优先看生活稳定性的人。`;
+      if (equityHeavy) return `这份 Offer 的<strong>名义总包里有较大一部分来自长期权益</strong>。如果你当前更看重短期现金流，应优先盯住“每月到手”和“年度税后现金”。`;
+      if (bonusHeavy) return `这份 Offer 的<strong>浮动收入占比偏高</strong>，建议决策时把年终按更保守的比例折算，不要默认一定拿满。`;
+      return `这份 Offer 在<strong>现金、稳定性和潜在成长</strong>之间相对平衡，适合作为校招生初期的稳健选择。`;
+    }
+
+    function buildJudgements(offer) {
+      return [
+        {
+          title: '月度现金流表现',
+          badge: offer.monthlyTakeHome >= 18000 ? '对独立生活友好' : '需要结合城市成本看',
+          tone: offer.monthlyTakeHome >= 18000 ? 'success' : 'neutral',
+          body: `预计每月到手 ${money(offer.monthlyTakeHome)}。在 ${offer.city} 这样的求职城市里，这个水平是否舒服，还要结合房租和生活成本一起判断。`
+        },
+        {
+          title: '总包是否有“画饼”成分',
+          badge: offer.equityRatio >= 0.2 ? '需要谨慎' : '相对克制',
+          tone: offer.equityRatio >= 0.2 ? 'warn' : 'success',
+          body: offer.equityRatio >= 0.2
+            ? '总包中长期权益占比偏高。若你暂时没有很高风险承受能力，不建议只看总包做决定。'
+            : '总包里主要还是现金与较明确的收入项，比较适合作为校招生第一份工作的判断基础。'
+        },
+        {
+          title: '这份 Offer 更适合谁',
+          badge: preferenceLabel(offer.riskPreference),
+          tone: preferenceTone(offer.riskPreference),
+          body: `${offer.notes || '当前未补充备注。'} 结合结构来看，这份 Offer 更适合${preferenceLongLabel(offer.riskPreference)}的用户。`
+        }
+      ];
+    }
+
+    function renderCompare() {
+      const compareOffers = state.compareIds.map(id => state.offers.find(o => o.id === id)).filter(Boolean);
+      els.compareTabs.innerHTML = compareOffers.length ? compareOffers.map(offer => {
+        const reco = getRecommendation(compareOffers, state.preferenceMode);
+        return `
+          <div class="offer-chip ${offer.id === reco.offer?.id ? 'active' : ''}">
+            <div class="top"><span>Offer ${offer.code} · ${escapeHtml(offer.company)}</span><span class="status ${offer.id === reco.offer?.id ? 'success' : 'neutral'}">${offer.id === reco.offer?.id ? '推荐' : '已选'}</span></div>
+            <div class="meta">${offer.city} · ${escapeHtml(offer.position)} · 月到手 ${money(offer.monthlyTakeHome)}</div>
+            <div class="history-actions" style="margin-top:10px;">
+              <button class="ghost-btn" data-action="load" data-id="${offer.id}">查看</button>
+              <button class="danger-btn" data-action="removeCompare" data-id="${offer.id}">移出对比</button>
+            </div>
+          </div>
+        `;
+      }).join('') : `<div class="empty-state">当前还没有加入对比的 Offer。添加 2 个以上 Offer 后，这里会自动生成对比结果。</div>`;
+      bindDynamicActions(els.compareTabs);
+
+      const reco = getRecommendation(compareOffers, state.preferenceMode);
+      document.getElementById('recommendTitle').textContent = compareOffers.length ? `推荐优先考虑 Offer ${reco.offer?.code || ''}` : '先加入对比 Offer';
+      document.getElementById('recommendText').textContent = compareOffers.length ? reco.summary : '当前对比集合为空。';
+      els.reasonList.innerHTML = compareOffers.length ? reco.reasons.map(item => `
+        <div class="reason-item"><span class="dot"></span><div><strong>${item.title}</strong><div class="muted">${item.body}</div></div></div>
+      `).join('') : '';
+
+      els.compareInsights.innerHTML = compareOffers.length ? buildCompareInsight(compareOffers).map(item => `
+        <div class="assist-item"><div class="row"><strong>${item.title}</strong><span class="tag ${item.tone}">${item.badge}</span></div><p>${item.body}</p></div>
+      `).join('') : `<div class="empty-state">加入对比后，这里会生成不同维度的判断。</div>`;
+
+      renderCompareTable(compareOffers);
+    }
+
+    function renderCompareTable(compareOffers) {
+      if (!compareOffers.length) {
+        els.compareTable.innerHTML = '';
+        return;
+      }
+      const rows = [
+        ['预计月到手', o => money(o.monthlyTakeHome), 'cash'],
+        ['年度税后现金', o => money(o.annualNetCash), 'cash'],
+        ['名义总包', o => money(o.packageValue), 'package'],
+        ['固定收入占比', o => `${Math.round(o.fixedRatio * 100)}%`, 'ratio'],
+        ['浮动收入占比', o => `${Math.round(o.floatRatio * 100)}%`, 'ratio'],
+        ['股权 / 期权占比', o => `${Math.round(o.equityRatio * 100)}%`, 'ratio'],
+        ['稳定性评分', o => `${o.stabilityScore}`, 'score'],
+        ['成长性评分', o => `${o.growthScore}`, 'score'],
+        ['适合偏好', o => preferenceLabel(o.riskPreference), 'text']
+      ];
+      const bestCash = maxBy(compareOffers, o => o.annualNetCash)?.id;
+      const bestPackage = maxBy(compareOffers, o => o.packageValue)?.id;
+      const bestStability = maxBy(compareOffers, o => o.stabilityScore)?.id;
+      const bestGrowth = maxBy(compareOffers, o => o.growthScore)?.id;
+
+      els.compareTable.innerHTML = `
+        <thead>
+          <tr>
+            <th>对比项</th>
+            ${compareOffers.map(o => `<th>Offer ${o.code}<br><span class="muted">${escapeHtml(o.company)} · ${o.city}</span></th>`).join('')}
+          </tr>
+        </thead>
+        <tbody>
+          ${rows.map(([label, getter, type]) => `
+            <tr>
+              <td><strong>${label}</strong></td>
+              ${compareOffers.map(o => {
+                const cls = type === 'cash' ? (o.id === bestCash ? 'value-up' : '')
+                  : type === 'package' ? (o.id === bestPackage ? 'value-up' : '')
+                  : label.includes('稳定') ? (o.id === bestStability ? 'value-up' : '')
+                  : label.includes('成长') ? (o.id === bestGrowth ? 'value-up' : '')
+                  : '';
+                return `<td class="${cls}">${getter(o)}</td>`;
+              }).join('')}
+            </tr>
+          `).join('')}
+        </tbody>
+      `;
+    }
+
+    function getRecommendation(offers, mode) {
+      if (!offers.length) return { offer: null, summary: '', reasons: [] };
+      const scores = offers.map(offer => {
+        let score = 0;
+        if (mode === 'cash') score = offer.annualNetCash * 0.65 + offer.stabilityScore * 800 + offer.packageValue * 0.02;
+        if (mode === 'stable') score = offer.stabilityScore * 2000 + offer.annualNetCash * 0.3 - offer.equityRatio * 100000;
+        if (mode === 'growth') score = offer.growthScore * 1800 + offer.packageValue * 0.15 + offer.equityValue * 0.15;
+        return { offer, score };
+      }).sort((a, b) => b.score - a.score);
+      const best = scores[0].offer;
+      const second = scores[1]?.offer;
+      const summaryMap = {
+        cash: `在“现金流优先”模式下，Offer ${best.code} 更值得优先考虑。它的年度税后现金更强，且到手表现不会因为过多浮动项而失真。${second ? `与 Offer ${second.code} 相比，它在现金质量上的优势更稳。` : ''}`,
+        stable: `在“求稳优先”模式下，Offer ${best.code} 更合适。它的固定收入占比更高、结构更清晰，不容易被总包里的非现金部分带偏。`,
+        growth: `在“长期成长”模式下，Offer ${best.code} 的上升弹性更大。它未必是短期到手最好的，但更适合愿意承受波动换取潜在天花板的人。`
+      };
+      return {
+        offer: best,
+        summary: summaryMap[mode],
+        reasons: [
+          { title: '当前偏好下的综合分更高', body: mode === 'cash' ? '年税后现金和稳定性组合更强。' : mode === 'stable' ? '固定收入占比和结构清晰度更好。' : '长期权益与成长弹性更突出。' },
+          { title: '更符合校招生常见决策逻辑', body: mode === 'growth' ? '前提是你明确接受更高不确定性。' : '比起名义总包，这样的结构更容易真正落到自己手里。' },
+          { title: '不是单看一个数字', body: '推荐结果同时考虑了到手、稳定性、长期权益和收入结构。' }
+        ]
+      };
+    }
+
+    function buildCompareInsight(offers) {
+      if (!offers.length) return [];
+      const bestCash = maxBy(offers, o => o.annualNetCash);
+      const bestStable = maxBy(offers, o => o.stabilityScore);
+      const bestGrowth = maxBy(offers, o => o.growthScore);
+      return [
+        { title: '现金流', badge: `Offer ${bestCash.code}`, tone: 'success', body: `${bestCash.company} 的年度税后现金更强，适合优先考虑现实生活成本的人。` },
+        { title: '稳定性', badge: `Offer ${bestStable.code}`, tone: 'primary', body: `${bestStable.company} 的固定收入占比更高，结构更清晰。` },
+        { title: '长期弹性', badge: `Offer ${bestGrowth.code}`, tone: 'warn', body: `${bestGrowth.company} 的长期权益和成长性评分更突出，但波动也更高。` }
+      ];
+    }
+
+    function renderHistory() {
+      const query = document.getElementById('historySearch').value.trim().toLowerCase();
+      const filter = document.getElementById('historyFilter').value;
+      const sort = document.getElementById('historySort').value;
+      let list = [...state.offers];
+
+      if (query) {
+        list = list.filter(o => [o.company, o.position, o.city, o.notes].join(' ').toLowerCase().includes(query));
+      }
+      if (filter === 'compare') list = list.filter(o => state.compareIds.includes(o.id));
+      if (filter === 'favorite') list = list.filter(o => o.isFavorite);
+
+      list.sort((a, b) => {
+        if (sort === 'cash') return b.annualNetCash - a.annualNetCash;
+        if (sort === 'package') return b.packageValue - a.packageValue;
+        return new Date(b.updatedAt) - new Date(a.updatedAt);
+      });
+
+      els.historyGrid.innerHTML = list.length ? list.map(o => `
+        <div class="history-card">
+          <h3>Offer ${o.code} · ${escapeHtml(o.company)}</h3>
+          <p>${escapeHtml(o.position)} · ${o.city}</p>
+          <div class="meta-row">
+            <span class="tag primary">月到手 ${money(o.monthlyTakeHome)}</span>
+            <span class="tag success">税后 ${money(o.annualNetCash)}</span>
+            <span class="tag ${state.compareIds.includes(o.id) ? 'warn' : 'neutral'}">${state.compareIds.includes(o.id) ? '已在对比中' : '未加入对比'}</span>
+            ${o.isFavorite ? '<span class="tag success">已星标</span>' : ''}
+          </div>
+          <div class="kv-row">
+            <div class="kv-item"><span>固定现金</span><strong>${money(o.annualGrossFixed)}</strong></div>
+            <div class="kv-item"><span>浮动收入</span><strong>${money(o.annualBonus)}</strong></div>
+            <div class="kv-item"><span>潜在权益</span><strong>${money(o.equityValue)}</strong></div>
+            <div class="kv-item"><span>最近编辑</span><strong>${formatDate(o.updatedAt)}</strong></div>
+          </div>
+          <div class="history-actions">
+            <button class="ghost-btn" data-action="load" data-id="${o.id}">回填编辑</button>
+            <button class="ghost-btn" data-action="duplicate" data-id="${o.id}">复制一份</button>
+            <button class="ghost-btn" data-action="toggleFavorite" data-id="${o.id}">${o.isFavorite ? '取消星标' : '星标'}</button>
+            <button class="ghost-btn" data-action="compare" data-id="${o.id}">${state.compareIds.includes(o.id) ? '移出对比' : '加入对比'}</button>
+            <button class="danger-btn" data-action="delete" data-id="${o.id}">删除</button>
+          </div>
+        </div>
+      `).join('') : `<div class="empty-state" style="grid-column:1 / -1;">没有匹配到记录。你可以调整筛选条件，或先去录入 Offer。</div>`;
+
+      bindDynamicActions(els.historyGrid);
+    }
+
+    function renderReport() {
+      const compareOffers = state.compareIds.map(id => state.offers.find(o => o.id === id)).filter(Boolean);
+      const baseList = compareOffers.length ? compareOffers : (getCurrentOffer() ? [getCurrentOffer()] : []);
+      const reco = getRecommendation(baseList, state.preferenceMode);
+      document.getElementById('reportHeadline').textContent = reco.offer ? `当前更推荐 Offer ${reco.offer.code}` : '先生成一个结果或加入对比';
+      document.getElementById('reportSummary').textContent = reco.summary || '当前还没有足够数据生成报告。';
+      els.reportHighlights.innerHTML = reco.offer ? `
+        <div class="assist-item"><div class="row"><strong>首选</strong><span class="status success">Offer ${reco.offer.code}</span></div><p>${reco.offer.company} · ${reco.offer.city} · ${reco.offer.position}</p></div>
+        <div class="assist-item"><div class="row"><strong>当前偏好</strong><span class="status neutral">${preferenceLabel(state.preferenceMode)}</span></div><p>切换偏好模式后，推荐结论会同步变化。</p></div>
+        <div class="assist-item"><div class="row"><strong>样本数</strong><span class="status warn">${baseList.length} 份 Offer</span></div><p>至少比较 2 份 Offer 时，更容易看出差异。</p></div>
+      ` : `<div class="empty-state">当前没有可生成报告的数据。</div>`;
+
+      const cards = reco.offer ? [
+        { title: '为什么不是只看总包', body: '报告会把固定现金、浮动收入和潜在权益拆开，避免被名义总包误导。' },
+        { title: '为什么城市会影响到手', body: '同样的税前工资，在不同城市由于社保和公积金口径不同，到手金额会出现差异。' },
+        { title: '怎么看结构更稳', body: '固定收入占比更高、浮动收入更低的 Offer，通常更适合第一份工作优先看确定性。' }
+      ] : [
+        { title: '保存记录一个 Offer', body: '保存后就能在历史、结果、报告三个页面联动展示。' },
+        { title: '再加入对比', body: '2-4 份 Offer 的对比最容易让这个产品体现价值。' },
+        { title: '再导出报告', body: '这时它就不只是工具，而是一个决策助手。' }
+      ];
+      els.reportCards.innerHTML = cards.map(card => `<div class="report-card"><h4>${card.title}</h4><p>${card.body}</p></div>`).join('');
+    }
+
+    function bindDynamicActions(root) {
+      root.querySelectorAll('[data-action]').forEach(btn => {
+        btn.onclick = () => handleDynamicAction(btn.dataset.action, btn.dataset.id);
+      });
+    }
+
+    function handleDynamicAction(action, id) {
+      const offer = state.offers.find(o => o.id === id);
+      if (!offer) return;
+      if (action === 'load') {
+        state.currentOfferId = id;
+        persist();
+        syncFormWithCurrentOffer();
+        renderAll();
+        showScreen('input');
+        
+      }
+      if (action === 'duplicate') {
+        const clone = enrichOffer({ ...offer, id: undefined, code: undefined, company: `${offer.company}（副本）`, updatedAt: new Date().toISOString() });
+        saveOffer(clone, false);
+        renderAll();
+        
+      }
+      if (action === 'toggleFavorite') {
+        offer.isFavorite = !offer.isFavorite;
+        offer.updatedAt = new Date().toISOString();
+        offer.code = offer.code || nextOfferCode();
+        Object.assign(offer, calculateOffer(offer));
+        persist();
+        renderAll();
+        
+      }
+      if (action === 'compare') {
+        if (state.compareIds.includes(id)) {
+          removeFromCompare(id);
+        } else {
+          addToCompare(id);
+          renderAll();
+        }
+      }
+      if (action === 'removeCompare') {
+        removeFromCompare(id);
+      }
+      if (action === 'delete') {
+        if (!confirm(`确认删除 Offer ${offer.code} 吗？`)) return;
+        state.offers = state.offers.filter(o => o.id !== id);
+        state.compareIds = state.compareIds.filter(x => x !== id);
+        if (state.currentOfferId === id) state.currentOfferId = state.offers[0]?.id || null;
+        persist();
+        renderAll();
+        
+      }
+    }
+
+    function copyShareLink() {
+      const params = new URLSearchParams();
+      if (state.currentOfferId) params.set('offer', state.currentOfferId);
+      if (state.compareIds.length) params.set('compare', state.compareIds.join(','));
+      params.set('pref', state.preferenceMode);
+      const url = `${location.origin}${location.pathname}#report?${params.toString()}`;
+      navigator.clipboard.writeText(url).then(() => flashButton(document.getElementById('copyLinkBtn'), '已复制')).catch(() => flashButton(document.getElementById('copyLinkBtn'), '复制失败'));
+    }
+
+    function downloadJSON() {
+      const payload = {
+        currentOfferId: state.currentOfferId,
+        compareIds: state.compareIds,
+        preferenceMode: state.preferenceMode,
+        offers: state.offers
+      };
+      const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'offerpilot-report.json';
+      a.click();
+      URL.revokeObjectURL(a.href);
+      flashButton(document.getElementById('downloadJsonBtn'), '已下载');
+    }
+    function money(n) {
+      return `¥${Math.round(Number(n || 0)).toLocaleString('zh-CN')}`;
+    }
+    function formatK(n) {
+      return Number(n || 0) >= 10000 ? `${(Number(n) / 1000).toFixed(Number(n) % 1000 === 0 ? 0 : 1)}k` : `${n}`;
+    }
+    function formatDate(iso) {
+      const d = new Date(iso);
+      return `${d.getFullYear()}.${String(d.getMonth()+1).padStart(2,'0')}.${String(d.getDate()).padStart(2,'0')}`;
+    }
+    function flashButton(button, text = '已完成') {
+      if (!button) return;
+      const original = button.dataset.originalText || button.textContent;
+      button.dataset.originalText = original;
+      button.textContent = text;
+      button.disabled = true;
+      clearTimeout(button.__flashTimer);
+      button.__flashTimer = setTimeout(() => {
+        button.textContent = original;
+        button.disabled = false;
+      }, 1200);
+    }
+    function escapeHtml(str='') {
+      return String(str)
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#39;');
+    }
+    function maxBy(list, getter) {
+      return list.reduce((best, cur) => !best || getter(cur) > getter(best) ? cur : best, null);
+    }
+    function preferenceLabel(key) {
+      return { cash: '现金流优先', stable: '求稳优先', growth: '长期成长', balanced: '默认平衡' }[key] || '默认平衡';
+    }
+    function preferenceLongLabel(key) {
+      return { cash: '优先看现金流安全感', stable: '优先看确定性', growth: '愿意接受波动换增长', balanced: '想在几项因素之间求平衡' }[key] || '想在几项因素之间求平衡';
+    }
+    function preferenceTone(key) {
+      return { cash: 'success', stable: 'primary', growth: 'warn', balanced: 'neutral' }[key] || 'neutral';
+    }
+  </script>
+<script>
+(function(){
+  const PATCH_KEY = 'offerpilot_patch_v5_seen';
+  const TEMPLATE_CONFIGS = {
+    internet: {
+      name:'互联网大厂',
+      tone:'#315efb', soft:'rgba(49,94,251,.10)', line:'rgba(49,94,251,.18)',
+      description:'更常见 Base 月薪 + 年终 + RSU 结构。建议把现金、浮动和权益拆开看，避免被总包数字带偏。',
+      tags:[['现金组成','Base、年终、签字费、补贴'],['权益特征','RSU / 股票，通常按年归属'],['录入重点','先确认月薪、薪数和目标年终，再单独填写股权']],
+      points:[['适合关注什么','短期到手与长期权益分开看，才更接近真实决策。'],['常见波动点','目标年终和实际发放可能不同，RSU 也通常分 3–4 年归属。']],
+      labels:{monthlySalary:'Base 月薪', bonusMonths:'目标年终（月）', subsidyAnnual:'签字费 / 固定补贴', equityValue:'RSU / 股票名义价值'},
+      hints:{company:'适合字节、腾讯、阿里、美团、小红书等平台型公司。', monthlySalary:'这里填税前 Base 月薪，不用把股票折进去。', bonusMonths:'先填目标值，结果会单独当作浮动收入展示。', subsidyAnnual:'例如签字费、房补、交通补贴等明确会发的钱。', equityValue:'按 offer 里写的名义值录入，系统不会把它并入现金到手。', offerText:'直接粘贴 HR 在微信、飞书或邮件里的描述即可。'},
+      placeholders:{company:'例如：字节跳动 / 美团 / 腾讯 / 小红书', position:'例如：算法工程师 / 后端工程师 / 产品经理'}
+    },
+    foreign: {
+      name:'外企',
+      tone:'#0f766e', soft:'rgba(15,118,110,.10)', line:'rgba(15,118,110,.18)',
+      description:'外企更常见 Base + Bonus + 津贴结构，股权不一定是主项，更适合先把固定现金和 bonus 口径搞清楚。',
+      tags:[['现金组成','Base、Bonus、津贴、sign-on'],['权益特征','部分岗位有 ESPP / 限制性股票'],['录入重点','先确认 annual bonus 是目标值还是保底']],
+      points:[['适合关注什么','先确认 bonus 是固定、目标还是上限，以及发放时点。'],['常见波动点','有些外企写的是 target bonus，不一定等于 guaranteed bonus。']],
+      labels:{monthlySalary:'Base 月薪', bonusMonths:'Bonus（月）', subsidyAnnual:'津贴 / 签字费', equityValue:'股票计划 / 长期激励（可选）'},
+      hints:{company:'适合 Microsoft、Intel、SAP、IBM、Amazon 等外企结构。', monthlySalary:'优先填写 base，不要把补贴折进去。', bonusMonths:'如果 offer 只写 bonus 百分比，可先换算成月数录入。', subsidyAnnual:'可填写补贴、sign-on、餐补、交通补贴等。', equityValue:'没有可以留空；有的话建议按名义值录入。', offerText:'英文 offer 片段也支持识别。'},
+      placeholders:{company:'例如：Microsoft / Intel / SAP / 某欧洲外企', position:'例如：Data Analyst / Product Analyst / SDE'}
+    },
+    manufacture: {
+      name:'制造业研发',
+      tone:'#d97706', soft:'rgba(217,119,6,.10)', line:'rgba(217,119,6,.18)',
+      description:'制造业研发更常见固定薪资 + 年终 + 安家补贴 / 人才补贴。很多情况下股权不是重点，更适合看稳定现金和城市成本。',
+      tags:[['现金组成','月薪、年终、项目奖、安家费'],['权益特征','多数岗位长期权益较少'],['录入重点','重点确认安家费、人才补贴怎么发']],
+      points:[['适合关注什么','把安家费、项目奖和基本月薪分开录入，更容易看清现金质量。'],['常见波动点','补贴可能分年度发放，项目奖也常与绩效绑定。']],
+      labels:{monthlySalary:'税前月薪', bonusMonths:'年终 / 项目奖（月）', subsidyAnnual:'安家费 / 人才补贴', equityValue:'长期激励（可选）'},
+      hints:{company:'适合车企、芯片制造、工业软件、硬件研发等岗位。', monthlySalary:'直接填合同里的税前月薪。', bonusMonths:'如果项目奖不稳定，先填保守值更稳妥。', subsidyAnnual:'如安家费、人才补贴、住房补贴等。', equityValue:'没有可直接留空，不影响现金测算。', offerText:'建议把安家费、项目奖、住房补贴描述一起贴入。'},
+      placeholders:{company:'例如：某车企 / 某制造业龙头 / 某硬件公司', position:'例如：研发工程师 / 测试工程师 / 芯片验证'}
+    },
+    state: {
+      name:'国企 / 平台型组织',
+      tone:'#166534', soft:'rgba(22,101,52,.10)', line:'rgba(22,101,52,.18)',
+      description:'国企和平台型组织通常更强调稳定性，结构多为固定薪资 + 补贴 + 较低浮动，适合优先看确定性能拿到的钱。',
+      tags:[['现金组成','月薪、津贴、年终、各类补贴'],['权益特征','股权较少，更重视公积金与福利'],['录入重点','重点确认公积金、补贴和保底年终']],
+      points:[['适合关注什么','固定收入、公积金比例和补贴兑现方式往往比股权更重要。'],['常见波动点','年终通常不高，但整体结构相对稳定。']],
+      labels:{monthlySalary:'税前月薪', bonusMonths:'年终（月）', subsidyAnnual:'津贴 / 落户补贴 / 其他补助', equityValue:'长期激励（通常可留空）'},
+      hints:{company:'适合国企、研究院、运营商、电网、平台型组织等。', monthlySalary:'建议直接填税前月薪。', bonusMonths:'如果只有模糊范围，可以先填保守值。', subsidyAnnual:'如住房补贴、通讯补贴、人才补贴等。', equityValue:'多数情况下可留空；有特殊长期激励再填。', offerText:'适合粘贴较口语化的 HR 描述，系统会按国企模板解释。'},
+      placeholders:{company:'例如：某国企平台 / 某研究院 / 某运营商', position:'例如：技术管培生 / 开发工程师 / 运营分析'}
+    }
+  };
+
+  const extraStyle = document.createElement('style');
+  extraStyle.textContent = `
+    :root { --template-accent:#315efb; --template-soft:rgba(49,94,251,.10); --template-line:rgba(49,94,251,.18); }
+    .app-shell{ width:calc(100% - 24px) !important; max-width:1500px !important; }
+    .field label{ display:block; }
+    .field-hint{ margin-top:-4px; font-size:12px; line-height:1.55; color:#64748b; }
+    .field-hint:empty{ display:none; }
+    .field.is-hidden{ display:none !important; }
+    .history-toolbar input, .history-toolbar select, .field input, .field select, .field textarea{
+      font-size:16px !important; width:100%; border:1px solid rgba(148,163,184,.22) !important;
+      background:linear-gradient(180deg, rgba(255,255,255,.98), rgba(247,250,255,.96)) !important;
+      color:#0f172a !important; box-shadow:inset 0 1px 0 rgba(255,255,255,.88), 0 10px 24px rgba(15,23,42,.05) !important;
+    }
+    .field input, .field select, .history-toolbar input, .history-toolbar select{ min-height:56px; padding:0 18px; border-radius:18px; }
+    .field textarea{ min-height:128px; padding:16px 18px; border-radius:20px; resize:vertical; line-height:1.72; }
+    .field input:hover, .field select:hover, .field textarea:hover, .history-toolbar input:hover, .history-toolbar select:hover{ border-color:rgba(100,116,139,.32) !important; }
+    .field input:focus, .field select:focus, .field textarea:focus, .history-toolbar input:focus, .history-toolbar select:focus{ outline:none; border-color:rgba(49,94,251,.28) !important; box-shadow:0 0 0 4px rgba(49,94,251,.10),0 16px 32px rgba(49,94,251,.10),inset 0 1px 0 rgba(255,255,255,.84) !important; transform:translateY(-1px); }
+    .field select, .history-toolbar select{ appearance:none; -webkit-appearance:none; -moz-appearance:none; padding-right:52px !important; background-image:linear-gradient(180deg, rgba(255,255,255,.98), rgba(247,250,255,.96)), url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18' height='18' viewBox='0 0 18 18' fill='none'%3E%3Cpath d='M4.5 7.25L9 11.75L13.5 7.25' stroke='%2364748B' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"); background-repeat:no-repeat,no-repeat; background-position:center,right 16px center; background-size:auto,18px; }
+    .template-profile{ margin:0 0 18px; padding:20px 20px 18px; border-radius:24px; border:1px solid var(--template-line); background:linear-gradient(180deg, var(--template-soft), rgba(255,255,255,.96)); box-shadow:inset 0 1px 0 rgba(255,255,255,.78),0 12px 28px rgba(15,23,42,.05); }
+    .template-profile-head{ display:flex; align-items:flex-start; justify-content:space-between; gap:16px; margin-bottom:14px; flex-wrap:wrap; }
+    .template-profile-head h3{ margin:0 0 8px; font-size:18px; letter-spacing:-.02em; }
+    .template-profile-head p{ margin:0; color:#475569; font-size:13px; line-height:1.7; max-width:760px; }
+    .template-chip{ display:inline-flex; align-items:center; gap:8px; padding:10px 14px; border-radius:999px; background:rgba(255,255,255,.84); border:1px solid var(--template-line); font-size:12px; font-weight:800; color:var(--template-accent); }
+    .template-chip i{ width:10px; height:10px; border-radius:999px; background:var(--template-accent); display:inline-block; }
+    .template-profile-grid{ display:grid; grid-template-columns:1.08fr .92fr; gap:14px; }
+    .template-structure,.template-points{ display:grid; gap:10px; }
+    .template-structure-item,.template-point{ padding:14px 16px; border-radius:18px; background:rgba(255,255,255,.84); border:1px solid rgba(15,23,42,.07); }
+    .template-structure-item em{ display:inline-flex; align-items:center; justify-content:center; min-width:34px; height:22px; padding:0 8px; border-radius:999px; background:var(--template-soft); color:var(--template-accent); font-size:11px; font-style:normal; font-weight:800; margin-bottom:8px; }
+    .template-structure-item strong,.template-point strong{ display:block; margin-bottom:6px; font-size:13px; }
+    .template-structure-item span,.template-point span{ color:#475569; font-size:12px; line-height:1.65; display:block; }
+    @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))){
+      .app-shell,.topbar,.card,.assist-box,.ghost-btn,.segment,.metric-card,.history-card,.scenario-card,.info-card,.tag,.offer-tab,.template-profile{ backdrop-filter:none !important; background:#fff !important; }
+    }
+    @media (max-width:1220px){ .template-profile-grid{ grid-template-columns:1fr; } }
+  `;
+  document.head.appendChild(extraStyle);
+
+  const fieldMetaMap = {
+    company:{label:'公司名称', labelId:'labelCompany', hintId:'hintCompany'},
+    position:{label:'岗位名称', labelId:'labelPosition', hintId:'hintPosition'},
+    city:{label:'工作城市', labelId:'labelCity', hintId:'hintCity'},
+    monthlySalary:{label:'税前月薪', labelId:'labelMonthlySalary', hintId:'hintMonthlySalary'},
+    salaryMonths:{label:'发薪月数', labelId:'labelSalaryMonths', hintId:'hintSalaryMonths'},
+    bonusMonths:{label:'年终奖（月）', labelId:'labelBonusMonths', hintId:'hintBonusMonths'},
+    housingRate:{label:'公积金比例', labelId:'labelHousingRate', hintId:'hintHousingRate'},
+    subsidyAnnual:{label:'年度补贴 / 签字费', labelId:'labelSubsidyAnnual', hintId:'hintSubsidyAnnual'},
+    equityValue:{label:'股票 / 期权名义价值', labelId:'labelEquityValue', hintId:'hintEquityValue'},
+    riskPreference:{label:'风险偏好标签', labelId:'labelRiskPreference', hintId:'hintRiskPreference'},
+    offerText:{label:'Offer 文本 / HR 消息 / 邮件内容', labelId:'labelOfferText', hintId:'hintOfferText'},
+    notes:{label:'备注', labelId:'labelNotes', hintId:'hintNotes'}
+  };
+
+  function ensureFieldMeta(){
+    Object.entries(fieldMetaMap).forEach(([key, meta]) => {
+      const input = formEl[key];
+      if (!input) return;
+      const field = input.closest('.field');
+      if (!field) return;
+      let label = field.querySelector('label');
+      if (!label){ label = document.createElement('label'); field.prepend(label); }
+      label.id = meta.labelId;
+      label.textContent = label.textContent || meta.label;
+      let hint = field.querySelector('.field-hint');
+      if (!hint){ hint = document.createElement('div'); hint.className = 'field-hint'; label.insertAdjacentElement('afterend', hint); }
+      hint.id = meta.hintId;
+    });
+    if (!document.getElementById('templateProfile')) {
+      const form = document.getElementById('offerForm');
+      const panel = document.createElement('div');
+      panel.className = 'template-profile';
+      panel.id = 'templateProfile';
+      form.parentNode.insertBefore(panel, form);
+    }
+  }
+
+  function inferTemplateByCompany(text=''){
+    if (!text) return null;
+    if (/(字节|腾讯|阿里|美团|小红书|快手|百度|bilibili|京东|拼多多|互联网|rsu)/i.test(text)) return 'internet';
+    if (/(microsoft|google|amazon|apple|intel|ibm|sap|oracle|外企|bonus|sign\s*-?on)/i.test(text)) return 'foreign';
+    if (/(比亚迪|上汽|中车|宁德时代|制造|研发中心|硬件|安家费|项目奖)/i.test(text)) return 'manufacture';
+    if (/(国企|研究院|运营商|电网|平台公司|事业单位|编制)/i.test(text)) return 'state';
+    return null;
+  }
+  function inferTemplateByText(text=''){
+    return inferTemplateByCompany(text) || (/RSU|股票|期权/i.test(text) ? 'internet' : /安家费|人才补贴|项目奖/i.test(text) ? 'manufacture' : /bonus|sign-on|espp/i.test(text) ? 'foreign' : null);
+  }
+  function inferTemplateByOffer(offer){
+    if (!offer) return null;
+    return inferTemplateByCompany([offer.company, offer.position, offer.offerText, offer.notes].filter(Boolean).join(' ')) || (offer.equityValue > 0 ? 'internet' : null);
+  }
+
+  const originalLabelForTemplate = window.labelForTemplate;
+  window.labelForTemplate = function(key){ return TEMPLATE_CONFIGS[key]?.name || (originalLabelForTemplate ? originalLabelForTemplate(key) : key); };
+
+  function updateFormMeta(config){
+    Object.entries(fieldMetaMap).forEach(([key, meta]) => {
+      const label = document.getElementById(meta.labelId);
+      const hint = document.getElementById(meta.hintId);
+      if (label) label.textContent = (config.labels && config.labels[key]) || meta.label;
+      if (hint) hint.textContent = (config.hints && config.hints[key]) || '';
+    });
+    if (config.placeholders?.company) formEl.company.placeholder = config.placeholders.company;
+    if (config.placeholders?.position) formEl.position.placeholder = config.placeholders.position;
+    formEl.monthlySalary.placeholder = '例如 25000';
+    formEl.bonusMonths.placeholder = '例如 3';
+    formEl.subsidyAnnual.placeholder = '例如 10000';
+    formEl.equityValue.placeholder = '例如 80000';
+    formEl.offerText.placeholder = '把 HR 消息、邮件正文或 offer 结构贴进来，系统会自动识别城市、月薪、年终和股权等信息。';
+  }
+
+  window.applyTemplateProfile = function(key){
+    const config = TEMPLATE_CONFIGS[key] || TEMPLATE_CONFIGS.internet;
+    state.selectedTemplate = key;
+    document.documentElement.style.setProperty('--template-accent', config.tone);
+    document.documentElement.style.setProperty('--template-soft', config.soft);
+    document.documentElement.style.setProperty('--template-line', config.line);
+    document.querySelectorAll('[data-template]').forEach(btn => btn.classList.toggle('active', btn.dataset.template === key));
+    updateFormMeta(config);
+    const box = document.getElementById('templateProfile');
+    if (box) {
+      box.innerHTML = `
+        <div class="template-profile-head">
+          <div>
+            <h3>${config.name}模板</h3>
+            <p>${config.description}</p>
+          </div>
+          <span class="template-chip"><i></i> 当前模板：${config.name}</span>
+        </div>
+        <div class="template-profile-grid">
+          <div class="template-structure">
+            ${config.tags.map(([title, body], idx) => `<div class="template-structure-item"><em>${['结构','权益','建议'][idx] || '说明'}</em><strong>${title}</strong><span>${body}</span></div>`).join('')}
+          </div>
+          <div class="template-points">
+            ${config.points.map(([title, body]) => `<div class="template-point"><strong>${title}</strong><span>${body}</span></div>`).join('')}
+          </div>
+        </div>`;
+    }
+    persist();
+  };
+
+  const oldParse = window.parseOfferText;
+  window.parseOfferText = function(text){
+    if (!String(text || '').trim()) return null;
+    const baseParsed = oldParse ? (oldParse(text) || {}) : {};
+    const subsidyMatch = text.match(/(?:补贴|签字费|sign\s*-?on|安家费|人才补贴)[:：]?\s*(\d+(?:\.\d+)?)\s*([kKwW万]?)/i);
+    return Object.assign({}, baseParsed, {
+      template: inferTemplateByText(text),
+      subsidyAnnual: subsidyMatch ? normalizeMoneyToken(subsidyMatch[1], subsidyMatch[2]) : baseParsed.subsidyAnnual
+    });
+  };
+
+  window.renderRecognizedFields = function(){
+    const draft = buildOfferFromForm();
+    const confidence = Math.min(99, Math.max(81, Math.round(86 + (formEl.offerText.value.trim() ? 8 : 0) + (formEl.company.value ? 2 : 0) + (formEl.position.value ? 2 : 0))));
+    const badge = document.getElementById('recognitionBadge');
+    if (badge) badge.textContent = `${labelForTemplate(state.selectedTemplate || 'internet')} · 识别置信度 ${confidence}%`;
+    els.recognizedFields.innerHTML = [
+      ['城市口径', `${draft.city} · 社保与公积金已按当前城市规则估算`],
+      ['固定现金', draft.monthlySalary ? `${formatK(draft.monthlySalary)} × ${draft.salaryMonths} 薪` : '等待输入月薪与薪数'],
+      ['浮动收入', draft.bonusMonths ? `年终 / Bonus ${draft.bonusMonths} 个月` : '当前按 0 个月处理'],
+      ['潜在权益', draft.equityValue ? `${money(draft.equityValue)} 长期权益` : '未录入，默认不计入现金'],
+      ['预计月到手', draft.monthlySalary ? money(draft.monthlyTakeHome) : '输入后实时更新'],
+      ['预计年税后', draft.monthlySalary ? money(draft.annualNetCash) : '输入后实时更新']
+    ].map(([title, sub], idx) => `
+      <div class="assist-item">
+        <div class="row"><strong>${title}</strong><span class="status ${idx < 2 ? 'success' : idx < 4 ? 'warn' : 'neutral'}">${idx < 4 ? '信息' : '测算'}</span></div>
+        <p>${sub}</p>
+      </div>`).join('');
+  };
+
+  window.formReset = function(){
+    state.currentOfferId = null;
+    formEl.company.value = '';
+    formEl.position.value = '';
+    formEl.city.value = '上海';
+    formEl.monthlySalary.value = '';
+    formEl.salaryMonths.value = '12';
+    formEl.bonusMonths.value = '';
+    formEl.housingRate.value = 'default';
+    formEl.subsidyAnnual.value = '';
+    formEl.equityValue.value = '';
+    formEl.riskPreference.value = 'balanced';
+    formEl.offerText.value = '';
+    formEl.notes.value = '';
+    applyTemplateProfile(state.selectedTemplate || 'internet');
+    renderRecognizedFields();
+  };
+
+  window.syncFormWithCurrentOffer = function(){
+    const offer = getCurrentOffer() || state.offers[0];
+    if (!offer) { formReset(); return; }
+    formEl.company.value = offer.company || '';
+    formEl.position.value = offer.position || '';
+    formEl.city.value = offer.city || '上海';
+    formEl.monthlySalary.value = offer.monthlySalary || '';
+    formEl.salaryMonths.value = String(offer.salaryMonths || 12);
+    formEl.bonusMonths.value = offer.bonusMonths || '';
+    formEl.housingRate.value = String(offer.housingRate ?? 'default');
+    formEl.subsidyAnnual.value = offer.subsidyAnnual || '';
+    formEl.equityValue.value = offer.equityValue || '';
+    formEl.riskPreference.value = offer.riskPreference || 'balanced';
+    formEl.offerText.value = offer.offerText || '';
+    formEl.notes.value = offer.notes || '';
+    applyTemplateProfile(inferTemplateByOffer(offer) || state.selectedTemplate || 'internet');
+    renderRecognizedFields();
+  };
+
+  window.applyTemplate = function(key){
+    const t = TEMPLATES[key] || TEMPLATES.internet;
+    applyTemplateProfile(key);
+    formEl.company.value = t.company;
+    formEl.position.value = t.position;
+    formEl.city.value = t.city;
+    formEl.monthlySalary.value = t.monthlySalary;
+    formEl.salaryMonths.value = String(t.salaryMonths);
+    formEl.bonusMonths.value = t.bonusMonths;
+    formEl.housingRate.value = t.housingRate;
+    formEl.subsidyAnnual.value = t.subsidyAnnual;
+    formEl.equityValue.value = t.equityValue;
+    formEl.riskPreference.value = t.riskPreference || 'balanced';
+    formEl.offerText.value = t.offerText;
+    formEl.notes.value = t.notes;
+    renderRecognizedFields();
+  };
+
+  window.renderHome = ((old) => function(){
+    old();
+    const current = getCurrentOffer();
+    if (!current) {
+      document.getElementById('homeSummaryValue').textContent = '—';
+      document.getElementById('homeSummaryMetaA').textContent = '先录入一份 Offer';
+      document.getElementById('homeSummaryMetaB').textContent = '系统会自动生成月到手与年度现金预估';
+      els.homeMicroList.innerHTML = `
+        <div class="micro-item"><span>固定现金</span><strong>待录入</strong></div>
+        <div class="micro-item"><span>浮动收入</span><strong>待录入</strong></div>
+        <div class="micro-item"><span>潜在权益</span><strong>待录入</strong></div>
+        <div class="micro-item"><span>推荐偏好</span><span class="status neutral">默认平衡</span></div>`;
+    }
+  })(window.renderHome);
+
+  window.copyShareLink = function(){
+    const params = new URLSearchParams();
+    if (state.currentOfferId) params.set('offer', state.currentOfferId);
+    if (state.compareIds.length) params.set('compare', state.compareIds.join(','));
+    params.set('pref', state.preferenceMode);
+    const base = location.protocol === 'file:' ? location.href.split('#')[0] : `${location.origin}${location.pathname}`;
+    const url = `${base}#report?${params.toString()}`;
+    const fallback = () => {
+      const input = document.createElement('textarea'); input.value = url; input.style.position = 'fixed'; input.style.left = '-9999px'; document.body.appendChild(input); input.select();
+      try { document.execCommand('copy'); flashButton(document.getElementById('copyLinkBtn'), '已复制'); } catch { flashButton(document.getElementById('copyLinkBtn'), '复制失败'); }
+      document.body.removeChild(input);
+    };
+    if (navigator.clipboard && window.isSecureContext) navigator.clipboard.writeText(url).then(() => flashButton(document.getElementById('copyLinkBtn'), '已复制')).catch(fallback);
+    else fallback();
+  };
+
+  function rebindButton(id, handler, text){
+    const old = document.getElementById(id);
+    if (!old) return;
+    const btn = old.cloneNode(true);
+    if (text) btn.textContent = text;
+    old.parentNode.replaceChild(btn, old);
+    btn.addEventListener('click', handler);
+  }
+
+  function parseEnhanced(){
+    const parsed = window.parseOfferText(formEl.offerText.value || '');
+    if (!parsed) { flashButton(document.getElementById('parseTextBtn'), '未识别'); return; }
+    const inferred = parsed.template || inferTemplateByText(formEl.offerText.value || '') || state.selectedTemplate || 'internet';
+    applyTemplateProfile(inferred);
+    Object.entries(parsed).forEach(([key, value]) => {
+      if (formEl[key] && value !== undefined && value !== null && value !== '') formEl[key].value = value;
+    });
+    state.inputMode = 'text';
+    persist();
+    document.querySelectorAll('#inputModeSegment button').forEach(b => b.classList.toggle('active', b.dataset.inputMode === 'text'));
+    updateInputModeUI();
+    renderRecognizedFields();
+    flashButton(document.getElementById('parseTextBtn'), '已填充');
+  }
+
+  function bindLiveUpdates(){
+    Object.values(formEl).forEach(el => {
+      if (!el) return;
+      const evt = el.tagName === 'SELECT' ? 'change' : 'input';
+      el.addEventListener(evt, () => {
+        if (el === formEl.company) {
+          const inferred = inferTemplateByCompany(formEl.company.value);
+          if (inferred) applyTemplateProfile(inferred);
+        }
+        if (el === formEl.offerText) {
+          const inferred = inferTemplateByText(formEl.offerText.value);
+          if (inferred) applyTemplateProfile(inferred);
+        }
+        renderRecognizedFields();
+      });
+      if (evt !== 'change') el.addEventListener('change', () => renderRecognizedFields());
+    });
+  }
+
+  function clearSeededDemoDataIfNeeded(){
+    if (localStorage.getItem(PATCH_KEY)) return;
+    if (Array.isArray(state.offers) && state.offers.length === 3) {
+      const names = state.offers.map(o => o.company);
+      if (names.includes('大厂平台') && names.includes('现金更高') && names.includes('成长弹性')) {
+        state.offers = [];
+        state.compareIds = [];
+        state.currentOfferId = null;
+        persist();
+      }
+    }
+    localStorage.setItem(PATCH_KEY, '1');
+  }
+
+  ensureFieldMeta();
+  clearSeededDemoDataIfNeeded();
+  rebindButton('parseTextBtn', parseEnhanced, '解析 Offer 文本');
+  rebindButton('applyTemplateBtn', () => applyTemplate(state.selectedTemplate || 'internet'), '填入模板示例');
+  rebindButton('fillSampleBtn', () => { formReset(); flashButton(document.getElementById('fillSampleBtn'), '已清空'); }, '清空当前数值');
+  rebindButton('copyLinkBtn', copyShareLink);
+  bindLiveUpdates();
+  applyTemplateProfile(state.selectedTemplate || 'internet');
+  syncFormWithCurrentOffer();
+  renderAll();
+})();
+</script>
+
+</body>
+</html>
